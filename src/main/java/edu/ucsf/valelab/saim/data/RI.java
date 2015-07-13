@@ -4,6 +4,7 @@ package edu.ucsf.valelab.saim.data;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -28,8 +29,10 @@ public class RI {
       SILICONOXIDE ("siliconOxideRI.txt");
       
       // Hashmaps with cached values
-      public static HashMap<Double, Double> siliconMap_;
-      public static HashMap<Double, Double> siliconOxideMap_;
+      public static Map<Double, Double> siliconMap_ = 
+              new HashMap<Double, Double>();
+      public static Map<Double, Double> siliconOxideMap_ = 
+              new HashMap<Double, Double>();;
       
       private final String fileName_;
       Compound(String fileName) {
@@ -38,7 +41,7 @@ public class RI {
       public String getFile() {
          return fileName_;
       }
-      public static HashMap<Double, Double> getMap(Compound compound) {
+      public static Map<Double, Double> getMap(Compound compound) {
          if (compound.equals(Compound.SILICON)) {
             return siliconMap_;
          }
@@ -50,7 +53,7 @@ public class RI {
    }
    
    public static double getRI(Compound compound, double waveLength) {
-      HashMap<Double, Double> compoundMap = Compound.getMap(compound);
+      Map<Double, Double> compoundMap = Compound.getMap(compound);
       if (compoundMap.containsKey(waveLength))
          return compoundMap.get(waveLength);
       
@@ -82,21 +85,26 @@ public class RI {
       int counter = 0;
       ArrayList<Double> waveLengths = new ArrayList<Double>();
       ArrayList<Double> ris = new ArrayList<Double>();
-      while (s.hasNextDouble()) {
-         waveLengths.add(s.nextDouble());
+      while (s.hasNext()) {
          if (s.hasNextDouble()) {
-            ris.add(s.nextDouble());
+            waveLengths.add(s.nextDouble());
+            if (s.hasNextDouble()) {
+               ris.add(s.nextDouble());
+            }
+            // throw away the third column
+            if (s.hasNextDouble()) {
+               s.nextDouble();
+            }
+            if (waveLength <= waveLengths.get(counter) && counter > 0) {
+               // TODO: linear interpolation with the previous number
+               s.close();
+               return ris.get(counter - 1);
+            }
+            counter++;
+         } else {
+            // read away the next token:
+            s.next();
          }
-         // throw away the third column
-         if (s.hasNextDouble()) {
-            s.nextDouble();
-         }
-         if (waveLength <= waveLengths.get(counter) && counter > 0) {
-            // TODO: linear interpolation with the previous number
-            s.close();
-            return ris.get(counter - 1);
-         }
-         counter++;
       }
       
       // not found....
