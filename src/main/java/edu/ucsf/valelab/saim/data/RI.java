@@ -1,3 +1,23 @@
+///////////////////////////////////////////////////////////////////////////////
+//FILE:          RI.java
+//PROJECT:       SAIM
+//-----------------------------------------------------------------------------
+//
+// AUTHOR:       Nico Stuurman
+//
+// COPYRIGHT:    University of California, San Francisco 2015
+//
+// LICENSE:      This file is distributed under the BSD license.
+//               License text is included with the source distribution.
+//
+//               This file is distributed in the hope that it will be useful,
+//               but WITHOUT ANY WARRANTY; without even the implied warranty
+//               of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//
+//               IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+//               CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
+
 
 package edu.ucsf.valelab.saim.data;
 
@@ -96,9 +116,11 @@ public class RI {
                s.nextDouble();
             }
             if (waveLength <= waveLengths.get(counter) && counter > 0) {
-               // TODO: linear interpolation with the previous number
                s.close();
-               return ris.get(counter - 1);
+               return interpolate(
+                       waveLengths.get(counter - 1), waveLengths.get(counter),
+                       ris.get(counter -1), ris.get(counter), 
+                       waveLength);
             }
             counter++;
          } else {
@@ -110,6 +132,21 @@ public class RI {
       // not found....
       s.close();
       return 0.0;
+   }
+   
+   /**
+    * Finds the y value associated with an x value given two known x,y points
+    * 
+    * @param x1 lowest x value
+    * @param x2 highest x value
+    * @param y1 lowest y value
+    * @param y2 highest y value
+    * @param xVal x value for which we want to know the y value
+    * @return y value associated with xVal
+    */
+   public static double interpolate(
+           double x1, double x2, double y1, double y2, double xVal) {
+      return y1 + (y2 - y1) * (xVal - x1) / (x2 - x1);    
    }
            
    
