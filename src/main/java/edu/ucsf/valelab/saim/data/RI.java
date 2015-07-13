@@ -2,7 +2,9 @@
 package edu.ucsf.valelab.saim.data;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 
 /**
  * Use this class to get th refractive index of compounds of interest.
@@ -57,12 +59,48 @@ public class RI {
       return ri;
    } 
 
-   
+   /**
+    * Parse the file with refractive index information
+    * file has the format:
+    * 
+    * Wavelength(nm)	n	k
+    *210	1.5384	0
+    *215	1.5332	0
+    *208	1.046	2.944
+    *208.7	1.066	2.937
+    *209.4	1.07	2.963
+    * 
+    * @param compound
+    * @param waveLength
+    * @return 
+    */
    private static double getRIFromFile(Compound compound, double waveLength) {
       InputStream input = RI.class.getResourceAsStream(
               PATHINJAR + compound.getFile());
-      // TODO: parse the file and do the linear interpolation
       
+      Scanner s = new Scanner(input);
+      int counter = 0;
+      ArrayList<Double> waveLengths = new ArrayList<Double>();
+      ArrayList<Double> ris = new ArrayList<Double>();
+      while (s.hasNextDouble()) {
+         waveLengths.add(s.nextDouble());
+         if (s.hasNextDouble()) {
+            ris.add(s.nextDouble());
+         }
+         // throw away the third column
+         if (s.hasNextDouble()) {
+            s.nextDouble();
+         }
+         if (waveLength <= waveLengths.get(counter) && counter > 0) {
+            // TODO: linear interpolation with the previous number
+            s.close();
+            return ris.get(counter - 1);
+         }
+         counter++;
+      }
+      
+      // not found....
+      s.close();
       return 0.0;
    }
            
