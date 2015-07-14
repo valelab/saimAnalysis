@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 /**
- * Use this class to get th refractive index of compounds of interest.
+ * Use this class to get the refractive index of compounds of interest.
  * Refractive indices (RIs) depend on wavelength.  
  * This code uses tables from https://www.filmetrics.com.  These
  * tables are included in the jar file, and will be read when needed.
@@ -72,6 +72,14 @@ public class RI {
       }
    }
    
+   /**
+    * First checks the local cache for the value
+    * If not found, get the value from the data file using interpolation
+    * if needed.
+    * @param compound 
+    * @param waveLength
+    * @return Refractive index of the given compound at the given wavelength
+    */
    public static double getRI(Compound compound, double waveLength) {
       Map<Double, Double> compoundMap = Compound.getMap(compound);
       if (compoundMap.containsKey(waveLength))
