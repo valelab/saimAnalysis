@@ -24,7 +24,7 @@ import edu.ucsf.valelab.saim.data.RI;
 import org.apache.commons.math3.complex.Complex;
 
 /**
- *  Various calculations needed in the calculation of the strength of the local 
+ * Various calculations needed in the calculation of the strength of the local 
  * electric field as described in:
  * Paszek, M.J., C.C. DuFort, M.G. Rubashkin, M.W. Davidson, K.S. Thorn, J.T. 
  * Liphardt, and V.M. Weaver. 2012. 
@@ -49,10 +49,10 @@ public class SaimCalc {
     * @return phase difference (dimensionless?)
     */
    public static double PhaseDiff (
-           double wavelength, 
-           double angle, 
-           double nSample, 
-           double axialPos)
+           final double wavelength, 
+           final double angle, 
+           final double nSample, 
+           final double axialPos)
    {
       return 4.0 * Math.PI * nSample * axialPos * Math.cos(angle) / wavelength;     
    }
@@ -64,30 +64,29 @@ public class SaimCalc {
     * Scanning angle interference microscopy reveals cell dynamics at the nanoscale. 
     * Nat Meth. 9:825–827. doi:10.1038/nmeth.2077.
     * 
-    * @param waveLength of the excitation light source in nm
+    * @param wavelength of the excitation light source in nm
     * @param angle with respect to the normal in radiance
     * @param dOx Thickness of the Silicon Oxide layer in nm
     * @param nSample Refractive index of the sample's buffer
     * @return FresnelCoefficient for these conditions
     */
    public static Complex fresnel(
-           double waveLength, 
-           double angle, 
-           double dOx, 
-           double nSample) {
+           final double wavelength, 
+           final double angle, 
+           final double dOx, 
+           final double nSample) {
       
-      double nOx = RI.getRI(RI.Compound.SILICONOXIDE, waveLength);
-      double kOx = k(waveLength, nOx);
-      double cosOx = Math.cos( snell2(angle, nSample, 
-                      RI.getRI(RI.Compound.SILICONOXIDE, waveLength)));
+      double nOx = RI.getRI(RI.Compound.SILICONOXIDE, wavelength);
+      double kOx = k(wavelength, nOx);
+      double cosOx = Math.cos(snell2(angle, nSample, 
+                      RI.getRI(RI.Compound.SILICONOXIDE, wavelength)));
       double p1 = nOx * cosOx;
       double p2 = nSample * Math.cos(angle);
-      Complex i = new Complex (0,1);
       double kOxdOxCosOx =  kOx * dOx * cosOx; 
       
       double m11TE = Math.cos( kOxdOxCosOx );
-      Complex m12TE = i.multiply(-1/p1 * Math.sin( kOxdOxCosOx ) );
-      Complex m21TE = i.multiply(-p1 * Math.sin( kOxdOxCosOx ) );
+      Complex m12TE = Complex.I.multiply(-1/p1 * Math.sin( kOxdOxCosOx ) );
+      Complex m21TE = Complex.I.multiply(-p1 * Math.sin( kOxdOxCosOx ) );
       double m22TE = Math.cos( kOxdOxCosOx );
       
       Complex tmp = m12TE.add(m11TE).multiply(p2).add(m21TE.subtract(m22TE));
@@ -95,6 +94,22 @@ public class SaimCalc {
       Complex rTE = tmp.divide(tmp2);
       
       return rTE;
+   }
+   
+   public static double fieldStrength(
+         final double wavelength,
+         final double angle,
+         final double nSample,
+         final double dOx,
+         final double distance) 
+   {
+      Complex rTE = SaimCalc.fresnel(wavelength,angle, dOx, nSample);
+      double phaseDiff = PhaseDiff(wavelength, angle, nSample, distance);
+      Complex tmp = new Complex(Math.cos(phaseDiff), Math.sin(phaseDiff));
+      Complex fieldStrength = rTE.multiply(tmp);
+      fieldStrength = fieldStrength.add(1);
+
+      return fieldStrength.abs() * fieldStrength.abs();
    }
    
    /**
