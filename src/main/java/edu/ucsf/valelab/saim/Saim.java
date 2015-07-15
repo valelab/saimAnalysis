@@ -42,14 +42,14 @@ public class Saim
          fieldStrength = fieldStrength.add(1);
          System.out.println(" FieldStrength at angle: " + i + " is: " + 
                  fieldStrength.toString());
-         plots[0].add(i, fieldStrength.getReal());
+         plots[0].add(i, fieldStrength.abs() * fieldStrength.abs());
          
          // calculate for 28nm
          phaseDiff = SaimCalc.PhaseDiff(waveLength, angle, nSample, 28.0);
          tmp = new Complex(Math.cos(phaseDiff), Math.sin(phaseDiff));
          fieldStrength = rTE.multiply(tmp);
          fieldStrength = fieldStrength.add(1);
-         plots[1].add(i, fieldStrength.getReal());
+         plots[1].add(i,  fieldStrength.abs() * fieldStrength.abs());
          
          
       }
