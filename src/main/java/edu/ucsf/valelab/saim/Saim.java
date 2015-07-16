@@ -13,17 +13,17 @@ public class Saim
 {
    public static void main( String[] args )
    {
-      new Saim().plotFig1b();
+      new Saim().plotFig();
    }
    
    public Saim() {
    }
    
-   public void plotFig1b() {
+   public void plotFig() {
       
       double waveLength = 488.0;
       double nSample = 1.36;
-      double dOx = 490.0;
+      double dOx = 500.0;
       
       int n = 2;
       double[] height =  { 16.0, 28.0, 40.0, 56.0, 72.0, 88.0 };
@@ -34,7 +34,7 @@ public class Saim
          showShapes[i] = false;
       }
       
-      for (int i = 0; i <= 56; i+=1) {
+      for (int i = 0; i <= 52; i+=1) {
          double angle = Math.toRadians(i);
          // calculate for 16 nm
          for (int j = 0; j < n; j++) {
@@ -50,8 +50,8 @@ public class Saim
       
       Preferences prefs = Preferences.userNodeForPackage(this.getClass());
       PlotUtils pu = new PlotUtils(prefs);
-      pu.plotDataN("Fig 1b, at " + waveLength + " nm, n " + nSample, plots, 
-              "Angle of incidence (degree)", 
+      pu.plotDataN("Fig 1b, at " + waveLength + " nm, n " + nSample + ", dOx: " + dOx + " nm", plots, 
+              "Angle of incidence (degrees)", 
               "Normalized Intensity", showShapes, ""); 
        
     }

@@ -70,11 +70,11 @@ public class TestSaimCalc extends TestCase {
       
       
       // TODO: check that these Fresnel Coefficients are actually correct!
-      Complex fc1 = SaimCalc.fresnel(wl, Math.toRadians(0.0), wl, nSample);
+      Complex fc1 = SaimCalc.fresnelTE(wl, Math.toRadians(0.0), wl, nSample);
       System.out.println("Fresnel Coeficient: " + fc1.toString());
       assertEquals(-0.4351443410824772, fc1.getReal(), 0.00000000001);
       assertEquals(0.34301049731555, fc1.getImaginary(), 0.00000000001);
-      fc1 = SaimCalc.fresnel(wl, Math.toRadians(10.0), wl, nSample);
+      fc1 = SaimCalc.fresnelTE(wl, Math.toRadians(10.0), wl, nSample);
       System.out.println("Fresnel Coeficient: " + fc1.toString());
       assertEquals(-0.34781663145089203, fc1.getReal(), 0.00000000001);
       assertEquals(0.48474429474009834, fc1.getImaginary(), 0.00000000001);

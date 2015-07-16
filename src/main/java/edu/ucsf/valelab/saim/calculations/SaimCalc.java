@@ -58,7 +58,10 @@ public class SaimCalc {
    }
    
    /**
-    * Calculates the Fresnel coefficient as described in:
+    * Calculates the transverse electric (TE) component, perpendicular to the 
+    * plane of incidence, of the Fresnel coefficient of reflection between the 
+    * sample interface and the virtual silicon oxide–silicon layer, 
+    * as described in:
     * Paszek, M.J., C.C. DuFort, M.G. Rubashkin, M.W. Davidson, K.S. Thorn, J.T. 
     * Liphardt, and V.M. Weaver. 2012. 
     * Scanning angle interference microscopy reveals cell dynamics at the nanoscale. 
@@ -70,7 +73,7 @@ public class SaimCalc {
     * @param nSample Refractive index of the sample's buffer
     * @return FresnelCoefficient for these conditions
     */
-   public static Complex fresnel(
+   public static Complex fresnelTE(
            final double wavelength, 
            final double angle, 
            final double dOx, 
@@ -89,14 +92,18 @@ public class SaimCalc {
       double p2 = nSample * Math.cos(angle);
       double kOxdOxCosOx =  kOx * dOx * cosOx; 
       
-      double m11TE = Math.cos( kOxdOxCosOx );
-      Complex m12TE = Complex.I.multiply(-1/p1 * Math.sin( kOxdOxCosOx ) );
-      Complex m21TE = Complex.I.multiply(-p1 * Math.sin( kOxdOxCosOx ) );
-      double m22TE = m11TE;
+      double cosOfkOxdOxCosOx = Math.cos(kOxdOxCosOx);
+      double sinOfkOxdOxCosOx = Math.sin(kOxdOxCosOx);
       
-      Complex tmp = (m12TE.multiply(p0).add(m11TE)).multiply(p2).add(m21TE.subtract(m22TE * p0));
-      Complex tmp2 = m12TE.multiply(p0).add(m11TE).multiply(p2).add(m21TE.add(m22TE * p0));
-      Complex rTE = tmp.divide(tmp2);
+      double m11TE = cosOfkOxdOxCosOx;
+      Complex m12TE = Complex.I.multiply(-1/p1 * sinOfkOxdOxCosOx );
+      Complex m21TE = Complex.I.multiply(-p1 * sinOfkOxdOxCosOx );
+      double m22TE = cosOfkOxdOxCosOx;
+      
+      Complex tmp1 = ( (m12TE.multiply(p0)).add(m11TE) ).multiply(p2);
+      Complex tmp2 = tmp1.add( m21TE.subtract(m22TE * p0) );
+      Complex tmp3 = tmp1.add( m21TE.add(m22TE * p0) );
+      Complex rTE = tmp2.divide(tmp3);
       
       return rTE;
    }
@@ -108,24 +115,25 @@ public class SaimCalc {
          final double dOx,
          final double distance) 
    {
-      Complex rTE = fresnel(wavelength, angle, dOx, nSample);
+      Complex rTE = fresnelTE(wavelength, angle, dOx, nSample);
       double phaseDiff = PhaseDiff(wavelength, angle, nSample, distance);
       Complex tmp = new Complex(Math.cos(phaseDiff), Math.sin(phaseDiff));
       Complex fieldStrength = rTE.multiply(tmp);
-      fieldStrength = fieldStrength.add(1);
+      fieldStrength = fieldStrength.add(1.0);
 
-      return fieldStrength.abs() * fieldStrength.abs();
+      return  fieldStrength.getReal() * fieldStrength.getReal() + 
+              fieldStrength.getImaginary() * fieldStrength.getImaginary() ;
    }
    
    /**
     * Returns the angular wavenumber given the wavelength and refractive index
     * See: https://en.wikipedia.org/wiki/Wavenumber#In_wave_equations
-    * @param waveLength in nm
+    * @param wavelength in nm in vacuum
     * @param ri refractive index of the compound of interest
     * @return wavenumber (in radians per nm)
     */
-   public static double k(double waveLength, double ri) {
-      return 2.0 * Math.PI * ri / waveLength;
+   public static double k(double wavelength, double ri) {
+      return 2.0 * Math.PI * ri / wavelength;
    }
    
    /**
