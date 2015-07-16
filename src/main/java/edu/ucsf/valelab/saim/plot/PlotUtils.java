@@ -151,7 +151,7 @@ public class PlotUtils {
               yTitle, // y-axis Label
               dataset, // Dataset
               PlotOrientation.VERTICAL, // Plot Orientation
-              false, // Show Legend
+              true, // Show Legend
               true, // Use tooltips
               false // Configure chart to generate URLs?
       );
@@ -214,4 +214,15 @@ public class PlotUtils {
    }
    
 
+   public static XYSeries normalize (XYSeries input)
+   {
+      double max = input.getMaxY();
+      // double min = input.getMinY();
+      XYSeries output = new XYSeries( input.getKey(), 
+              input.getAutoSort(), input.getAllowDuplicateXValues());
+      for (int i = 0; i < input.getItemCount(); i++) {
+         output.add(input.getX(i), (input.getY(i).doubleValue()) / (max) );
+      }
+      return output;
+   }
 }

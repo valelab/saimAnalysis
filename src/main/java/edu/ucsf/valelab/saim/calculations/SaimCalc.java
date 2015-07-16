@@ -75,11 +75,16 @@ public class SaimCalc {
            final double angle, 
            final double dOx, 
            final double nSample) {
-      
+       
+      double nSi = RI.getRI(RI.Compound.SILICON, wavelength);
       double nOx = RI.getRI(RI.Compound.SILICONOXIDE, wavelength);
       double kOx = k(wavelength, nOx);
-      double cosOx = Math.cos(snell2(angle, nSample, 
-                      RI.getRI(RI.Compound.SILICONOXIDE, wavelength)));
+      double angleOx = snell2( angle, nSample, 
+                      RI.getRI(RI.Compound.SILICONOXIDE, wavelength));
+      double cosOx = Math.cos(angleOx);
+      double cosSi = Math.cos( snell2( angleOx, nOx, 
+              RI.getRI(RI.Compound.SILICON, wavelength)));
+      double p0 = nSi * cosSi;
       double p1 = nOx * cosOx;
       double p2 = nSample * Math.cos(angle);
       double kOxdOxCosOx =  kOx * dOx * cosOx; 
@@ -87,10 +92,10 @@ public class SaimCalc {
       double m11TE = Math.cos( kOxdOxCosOx );
       Complex m12TE = Complex.I.multiply(-1/p1 * Math.sin( kOxdOxCosOx ) );
       Complex m21TE = Complex.I.multiply(-p1 * Math.sin( kOxdOxCosOx ) );
-      double m22TE = Math.cos( kOxdOxCosOx );
+      double m22TE = m11TE;
       
-      Complex tmp = m12TE.add(m11TE).multiply(p2).add(m21TE.subtract(m22TE));
-      Complex tmp2 = m12TE.add(m11TE).multiply(p2).add(m21TE.add(m22TE));
+      Complex tmp = (m12TE.multiply(p0).add(m11TE)).multiply(p2).add(m21TE.subtract(m22TE * p0));
+      Complex tmp2 = m12TE.multiply(p0).add(m11TE).multiply(p2).add(m21TE.add(m22TE * p0));
       Complex rTE = tmp.divide(tmp2);
       
       return rTE;
@@ -103,7 +108,7 @@ public class SaimCalc {
          final double dOx,
          final double distance) 
    {
-      Complex rTE = SaimCalc.fresnel(wavelength,angle, dOx, nSample);
+      Complex rTE = fresnel(wavelength, angle, dOx, nSample);
       double phaseDiff = PhaseDiff(wavelength, angle, nSample, distance);
       Complex tmp = new Complex(Math.cos(phaseDiff), Math.sin(phaseDiff));
       Complex fieldStrength = rTE.multiply(tmp);

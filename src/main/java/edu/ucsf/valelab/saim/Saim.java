@@ -22,43 +22,37 @@ public class Saim
    public void plotFig1b() {
       
       double waveLength = 488.0;
-      double nSample = 1.33;
-      double dOx = 500.0;
+      double nSample = 1.36;
+      double dOx = 490.0;
       
-      XYSeries[] plots = new XYSeries[4];
-      plots[0] = new XYSeries(1);
-      plots[1] = new XYSeries(2);
-      plots[2] = new XYSeries(3);
-      plots[3] = new XYSeries(4);
-      boolean[] showShapes = new boolean[4];
-      showShapes[0] = true; showShapes[1] = true; showShapes[2] = true; showShapes[3] = true;
+      int n = 2;
+      double[] height =  { 16.0, 28.0, 40.0, 56.0, 72.0, 88.0 };
+      boolean[] showShapes = new boolean[n];
+      XYSeries[] plots = new XYSeries[n];
+      for (int i = 0; i < n; i++) {
+         plots[i] = new XYSeries("" + height[i] + "nm", false, false);
+         showShapes[i] = false;
+      }
       
-      for (int i = 0; i <= 54; i+=2) {
+      for (int i = 0; i <= 56; i+=1) {
          double angle = Math.toRadians(i);
          // calculate for 16 nm
-         double fieldStrength = SaimCalc.fieldStrength(
-                 waveLength, angle, nSample, dOx, 16.0);
-         plots[0].add(i, fieldStrength);
-         
-         // calculate for 28nm
-         fieldStrength = SaimCalc.fieldStrength(
-                 waveLength, angle, nSample, dOx, 28.0);
-         plots[1].add(i, fieldStrength);
-                  
-         // calculate for 44nm
-         fieldStrength = SaimCalc.fieldStrength(
-                 waveLength, angle, nSample, dOx, 44.0);
-         plots[2].add(i, fieldStrength);
-                  
-         // calculate for 60nm
-         fieldStrength = SaimCalc.fieldStrength(
-                 waveLength, angle, nSample, dOx, 60.0);
-         plots[3].add(i, fieldStrength);
+         for (int j = 0; j < n; j++) {
+            double fieldStrength = SaimCalc.fieldStrength(
+                    waveLength, angle, nSample, dOx, height[j]);
+            plots[j].add(i, fieldStrength);
+         }
+      }
+      
+      for (int i = 0; i < plots.length; i++) {
+         plots[i] = PlotUtils.normalize(plots[i]);
       }
       
       Preferences prefs = Preferences.userNodeForPackage(this.getClass());
-         PlotUtils pu = new PlotUtils(prefs);
-         pu.plotDataN("Fig 1b", plots, "Angle of incidence(degree)", "Intensity", showShapes, ""); 
+      PlotUtils pu = new PlotUtils(prefs);
+      pu.plotDataN("Fig 1b, at " + waveLength + " nm, n " + nSample, plots, 
+              "Angle of incidence (degree)", 
+              "Normalized Intensity", showShapes, ""); 
        
     }
 }
