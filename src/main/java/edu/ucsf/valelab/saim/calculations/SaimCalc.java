@@ -46,7 +46,7 @@ public class SaimCalc {
     * @param nSample refractive index of the sample medium
     * @param angle Angle with respect to the normal in the sample in radians
     * @param axialPos Position in the sample above the silicon oxide (in nm)
-    * @return phase difference (dimensionless?)
+    * @return phase difference (dimensionless)
     */
    public static double PhaseDiff (
            final double wavelength, 
@@ -118,24 +118,26 @@ public class SaimCalc {
    }
    
    /**
-    * Returns the wavenumber given the wavelength and refractive index
+    * Returns the angular wavenumber given the wavelength and refractive index
+    * See: https://en.wikipedia.org/wiki/Wavenumber#In_wave_equations
     * @param waveLength in nm
-    * @param ri of the compound of interest
-    * @return wavenumber (# of waves per nm)
+    * @param ri refractive index of the compound of interest
+    * @return wavenumber (in radians per nm)
     */
    public static double k(double waveLength, double ri) {
-      return 2 * Math.PI * ri / waveLength;
+      return 2.0 * Math.PI * ri / waveLength;
    }
    
    /**
     * Calculates the angle of incidence for light traveling through a medium
     * with known refractive index and angle of incidence into a medium with 
     * another known refractive index using Snell's law: sin(1)/sin(2) = n2/n1
+    * See: https://en.wikipedia.org/wiki/Snell%27s_law
     * 
     * @param angle1 angle with respect to the normal in radiance in medium 1
     * @param ri1 Refractive index of medium 1
     * @param ri2 Refractive index of medium 2
-    * @return Angle of incidence in medium 2
+    * @return angle of incidence in medium 2 in radiance
     */
    public static double snell2(double angle1, double ri1, double ri2) {
       double sinAngle2 = ri1 * Math.sin(angle1) / ri2;

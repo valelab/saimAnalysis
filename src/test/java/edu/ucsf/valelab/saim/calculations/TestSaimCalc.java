@@ -55,15 +55,29 @@ public class TestSaimCalc extends TestCase {
       System.out.println("Phase difference: " + phaseDiff);
       assertEquals(6.366961111275315, phaseDiff, 0.00000000001);
       
+      // Snell's law calculations
+      // air to water at 30 degrees
+      double angle = Math.toDegrees( SaimCalc.snell2(
+              Math.toRadians(30.0), 1.0, 1.33));
+      System.out.println("Angle found was " + angle + " degrees");
+      assertEquals(22.082413194472252, angle, 0.0000001);
+      
+      // angular wavenumber calculation
+      // wavenumber in oil for 488nm light
+      double k = SaimCalc.k(488.0, 1.55);
+      System.out.println("Wavenumber in oil at 488nm: " + k);
+      assertEquals(0.019956838578131884, k, 0.0000001);
+      
+      
       // TODO: check that these Fresnel Coefficients are actually correct!
       Complex fc1 = SaimCalc.fresnel(wl, Math.toRadians(0.0), wl, nSample);
       System.out.println("Fresnel Coeficient: " + fc1.toString());
-      assertEquals(0.19384803805353476, fc1.getReal(), 0.00000000001);
-      assertEquals(0.20517053212175, fc1.getImaginary(), 0.00000000001);
+      assertEquals(-0.4351443410824772, fc1.getReal(), 0.00000000001);
+      assertEquals(0.34301049731555, fc1.getImaginary(), 0.00000000001);
       fc1 = SaimCalc.fresnel(wl, Math.toRadians(10.0), wl, nSample);
-      assertEquals(0.2451834713177872, fc1.getReal(), 0.00000000001);
-      assertEquals(0.289535850077905, fc1.getImaginary(), 0.00000000001);
       System.out.println("Fresnel Coeficient: " + fc1.toString());
+      assertEquals(-0.34781663145089203, fc1.getReal(), 0.00000000001);
+      assertEquals(0.48474429474009834, fc1.getImaginary(), 0.00000000001);
    }
    
 }
