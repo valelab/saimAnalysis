@@ -4,11 +4,11 @@
   <groupId>edu.ucsf.valelab.saim</groupId>
   <artifactId>saim</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.1-SNAPSHOT</version>
 
   <name>saim</name>
   <url>http://valelab.ucsf.edu/~nico/ijplugins</url>
-  <description>An ImageJ/Micro-Manager plugin to perform analysis of data fro scanning angle interference microscopy</description>
+  <description>An ImageJ/Micro-Manager plugin to perform analysis of data for scanning angle interference microscopy</description>
   <properties>
      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
