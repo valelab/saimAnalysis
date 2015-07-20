@@ -156,6 +156,7 @@ public class SaimFunction implements UnivariateFunction,
       if (parameters.length != 3)
          throw new DimensionMismatchException(parameters.length, 3);
       
+      angle_ = x;
       double A = parameters[0];
       double h = parameters[2];
       
