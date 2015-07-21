@@ -87,10 +87,11 @@ public class TestSaimFitter extends TestCase {
          }
 
          System.out.println("Value was calculated: " + sff.getCalcCount() + " times");
+         sff.resetCalcCount();
       }
       
       // test by adding noise to the input
-       // make a collection of "observed" points
+      // make a collection of "observed" points
       final double noiseFactor = 0.1; // 10% noise
       fractionMaxError = noiseFactor;
 
@@ -124,43 +125,10 @@ public class TestSaimFitter extends TestCase {
          }
 
          System.out.println("Value was calculated: " + sff.getCalcCount() + " times");
+         sff.resetCalcCount();
       }
       
       
-      // Temporary code for performance testing
-      // implementation not using Complex numbers is at least 10 times faster
-      double angle = Math.toRadians(0.0);
-      SaimFunction sf = new SaimFunction(wavelength, dOx, nSample);
-      Complex rTE = sf.getFresnelTE(0);
-      double f = 4.0 * Math.PI * nSample * Math.cos(angle) / wavelength;
-      double phaseDiff = f * h;
-      
-      long startTime = System.nanoTime();
-      long nrRuns = 10000000;
-      double c = rTE.getReal();
-      double d = rTE.getImaginary();
-
-      for (int i = 0; i < nrRuns; i++) {
-         double val = 1 + 2 * c * Math.cos(phaseDiff) - 
-                 2 * d * Math.sin(phaseDiff) + c * c + d * d;
-      }
-      long endTime = System.nanoTime();
-      long took = endTime - startTime;
-      System.out.println("First method: " + nrRuns + " took: " + took + " nanoseconds");
-
-      startTime = System.nanoTime();
-      for (int i = 0; i < nrRuns; i++) {
-         Complex tmp = new Complex(Math.cos(phaseDiff), Math.sin(phaseDiff));
-         Complex fieldStrength = rTE.multiply(tmp);
-         fieldStrength = fieldStrength.add(1.0);
-         // square of absolute 
-         double val = fieldStrength.getReal() * fieldStrength.getReal()
-                 + fieldStrength.getImaginary() * fieldStrength.getImaginary();
-      }
-      endTime = System.nanoTime();
-      took = endTime - startTime;
-      System.out.println("Second method: " + nrRuns + " took: " + took + " nanoseconds");
-
 
    }
 }

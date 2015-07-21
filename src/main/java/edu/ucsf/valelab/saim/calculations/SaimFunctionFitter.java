@@ -63,6 +63,10 @@ public class SaimFunctionFitter extends AbstractCurveFitter {
       return saimFunction_.counter;
    }
    
+   public void resetCalcCount() {
+      saimFunction_.counter = 0;
+   }
+   
    @Override
    protected LeastSquaresProblem getProblem(Collection<WeightedObservedPoint> points) {
       final int len = points.size();
@@ -86,6 +90,7 @@ public class SaimFunctionFitter extends AbstractCurveFitter {
       return new LeastSquaresBuilder().
               maxEvaluations(Integer.MAX_VALUE).
               maxIterations(maxIterations_).
+              lazyEvaluation(true).
               //checker(checker).
               start(guess_).
               target(target).
