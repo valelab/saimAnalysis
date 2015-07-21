@@ -33,13 +33,15 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
  */
 public class SaimFunction implements UnivariateFunction, 
         ParametricUnivariateFunction {
-   final double wavelength_; // excitation wavelength in nm
-   final double dOx_;   // thickness of the oxide layer in nm
-   final double nSample_;  // refractive index of the sample
-   double angle_ = 0.0;   // input in degrees, internally used in radians
-   double A_ = 1.0; // parameter in field strength calculation
-   double B_ = 0.0; // parameter in field stenght calculation
-   final Map<Double, Complex> fresnelTE_;
+   private final double wavelength_; // excitation wavelength in nm
+   private final double dOx_;   // thickness of the oxide layer in nm
+   private final double nSample_;  // refractive index of the sample
+   private double angle_ = 0.0;   // input in degrees, internally used in radians
+   private double A_ = 1.0; // parameter in field strength calculation
+   private double B_ = 0.0; // parameter in field stenght calculation
+   private final Map<Double, Complex> fresnelTE_;
+   
+   public int counter = 0;
    
    /**
     * Constructor.  Stores several constants needed during calculations
@@ -72,7 +74,7 @@ public class SaimFunction implements UnivariateFunction,
    /**
     * Constructor that includes angle, and A and B parameters 
     * Stores several constants needed during calculations.
-    * @param wavelength - excitation wavelegth in nm
+    * @param wavelength - excitation wavelength in nm
     * @param dOx - thickness of the oxide layer in nm
     * @param nSample  - refractive index of the sample (likely 1.36 or so)
     * @param angle - angle with respect to the normal in the medium in degrees
@@ -91,7 +93,7 @@ public class SaimFunction implements UnivariateFunction,
     * @param angle angle 
     * @return 
     */
-   private Complex getFresnelTE(double angle) {
+   public Complex getFresnelTE(double angle) {
       if (fresnelTE_.containsKey(angle)) {
          return fresnelTE_.get(angle);
       }
@@ -108,13 +110,23 @@ public class SaimFunction implements UnivariateFunction,
     */
    @Override
    public double value(double h) {
+      counter++;
+      
       Complex rTE = getFresnelTE(angle_);
       double phaseDiff = SaimCalc.PhaseDiff(wavelength_, angle_, nSample_, h);
-      Complex tmp = new Complex(Math.cos(phaseDiff), Math.sin(phaseDiff));
-      Complex fieldStrength = rTE.multiply(tmp);
-      fieldStrength = fieldStrength.add(1.0);
-      double val =  fieldStrength.getReal() * fieldStrength.getReal() + 
-              fieldStrength.getImaginary() * fieldStrength.getImaginary() ;
+      double c = rTE.getReal();
+      double d = rTE.getImaginary();
+      double val = 1 + 2 * c * Math.cos(phaseDiff) - 
+             2 * d * Math.sin(phaseDiff) + c * c + d * d;
+      
+      // The following is more literal, but about 10 times slower:
+      /**
+       * Complex tmp = new Complex(Math.cos(phaseDiff), Math.sin(phaseDiff));
+       * Complex fieldStrength = rTE.multiply(tmp);
+       * fieldStrength = fieldStrength.add(1.0);
+       * double val =  fieldStrength.getReal() * fieldStrength.getReal() + 
+       *         fieldStrength.getImaginary() * fieldStrength.getImaginary() ;
+       */
       
       return A_ * val + B_;
    }
@@ -164,28 +176,24 @@ public class SaimFunction implements UnivariateFunction,
       Complex rTE = getFresnelTE(angle_);
       double f = 4.0 * Math.PI * nSample_ * Math.cos(angle_) / wavelength_;
       double phaseDiff = f * h;
-      Complex tmp = new Complex(Math.cos(phaseDiff), Math.sin(phaseDiff));
-      Complex fieldStrength = rTE.multiply(tmp);
-      fieldStrength = fieldStrength.add(1.0);
-      // square of absolute 
-      double val =  fieldStrength.getReal() * fieldStrength.getReal() + 
-              fieldStrength.getImaginary() * fieldStrength.getImaginary();
-      
-      // partial derivative for B is 0
+      double c = rTE.getReal();
+      double d = rTE.getImaginary();
+      double val = 1 + 2 * c * Math.cos(phaseDiff) - 
+             2 * d * Math.sin(phaseDiff) + c * c + d * d;
+
+      // partial derivative for B is 1
       
       // partial derivate for h is 
-      // -2*A*f*sin(h) * (d + d2 + e2) + 2*A*f*cos(h)*(-e+d2+e2)
+      //     - 2*A*c*f*sin(fh) - 2*A*d*f*cos(fh)
       // where f = phaseDiffFactor
-      // d = rTE.Real(), and e = rTE.Imaginary()
-      double d = rTE.getReal();
-      double e = rTE.getImaginary();
-      double pdh = -2 * A * f * Math.sin(h) * (d + d*d + e*e) +
-                    2 * A * f * Math.cos(h) * (-e + d*d + e*e);
+      // c = rTE.Real(), and d = rTE.Imaginary()
+
+      double pdh =  - 2 * A * c * f * Math.sin(phaseDiff) -  
+              2 * A * d * f * Math.cos(phaseDiff);
       
-      double result[] = {val, 0.0, pdh};
+      double result[] = {val, 1.0, pdh};
       return result;
    }
-   
    
    
 }

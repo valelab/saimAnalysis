@@ -29,9 +29,8 @@ import org.apache.commons.math3.fitting.leastsquares.LeastSquaresBuilder;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem;
 import org.apache.commons.math3.linear.DiagonalMatrix;
 import org.apache.commons.math3.optim.ConvergenceChecker;
-import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.PointVectorValuePair;
-import org.apache.commons.math3.optim.SimpleValueChecker;
+import org.apache.commons.math3.optim.SimpleVectorValueChecker;
 
 /**
  * Fits the Saim function using pre-defined wavelength, thickness of the oxide
@@ -60,6 +59,10 @@ public class SaimFunctionFitter extends AbstractCurveFitter {
       maxIterations_ = val;
    }
 
+   public int getCalcCount() {
+      return saimFunction_.counter;
+   }
+   
    @Override
    protected LeastSquaresProblem getProblem(Collection<WeightedObservedPoint> points) {
       final int len = points.size();
@@ -77,12 +80,13 @@ public class SaimFunctionFitter extends AbstractCurveFitter {
               new AbstractCurveFitter.TheoreticalValuesFunction(
                       saimFunction_, points);
 
-      ConvergenceChecker checker = 
-              new SimpleValueChecker(0.01, -1);
+      ConvergenceChecker<PointVectorValuePair> checker =
+          new SimpleVectorValueChecker(1.0e-6, 1.0e-10);
+      
       return new LeastSquaresBuilder().
               maxEvaluations(Integer.MAX_VALUE).
               maxIterations(maxIterations_).
-              // checker(checker).
+              //checker(checker).
               start(guess_).
               target(target).
               weight(new DiagonalMatrix(weights)).
