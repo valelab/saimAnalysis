@@ -113,14 +113,13 @@ public class PlotUtils {
    public Frame plotDataN(String title, XYSeries[] data, String xTitle,
            String yTitle, boolean[] showShapes, String annotation) {
 
-      // if we already have a plot open with this title, close it, but remember
-      // its position
-      Frame[] gfs = ChartFrame.getFrames();
-      for (Frame f : gfs) {
-         if (f.getTitle().equals(title)) {
-            f.dispose();
-         }
-      }
+      // Close existing frames
+      // Frame[] gfs = ChartFrame.getFrames();
+      // for (Frame f : gfs) {
+         //if (f.getTitle().equals(title)) {
+         //   f.dispose();
+         //}
+      // }
 
       // JFreeChart code
       XYSeriesCollection dataset = new XYSeriesCollection();
