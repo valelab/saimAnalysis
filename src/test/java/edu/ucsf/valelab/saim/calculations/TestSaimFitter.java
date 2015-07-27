@@ -22,7 +22,6 @@ package edu.ucsf.valelab.saim.calculations;
 
 import java.util.ArrayList;
 import junit.framework.TestCase;
-import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.fitting.WeightedObservedPoint;
 
 /**

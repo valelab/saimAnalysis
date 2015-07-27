@@ -192,7 +192,9 @@ public class PlotUtils {
          }
       }
       
-      XYAnnotation an = new XYTextAnnotation(annotation, maxX - 0.01, maxY);
+      // place annotation at 80 % of max X, maxY
+      XYAnnotation an = new XYTextAnnotation(annotation, 
+              maxX - 0.2 * (maxX - minX), maxY);
       plot.addAnnotation(an);
 
       renderer.setUseFillPaint(true);

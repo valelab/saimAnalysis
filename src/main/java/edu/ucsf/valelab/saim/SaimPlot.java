@@ -1,3 +1,23 @@
+///////////////////////////////////////////////////////////////////////////////
+//FILE:          SaimPlot.java
+//PROJECT:       SAIM
+//-----------------------------------------------------------------------------
+//
+// AUTHOR:       Nico Stuurman
+//
+// COPYRIGHT:    University of California, San Francisco 2015
+//
+// LICENSE:      This file is distributed under the BSD license.
+//               License text is included with the source distribution.
+//
+//               This file is distributed in the hope that it will be useful,
+//               but WITHOUT ANY WARRANTY; without even the implied warranty
+//               of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//
+//               IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+//               CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
+
 package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.calculations.SaimCalc;
@@ -19,18 +39,17 @@ import org.jfree.data.xy.XYSeries;
 public class SaimPlot implements PlugIn, DialogListener
 {
    Frame plotFrame_;      
-      static double wavelength = 488.0;
-      static double nSample = 1.36;
-      static double dOx = 500.0;
-      static int firstAngle = -50;
-      static int lastAngle = 50;
-      String heightString = "16, 32, 48";
+   double wavelength_ = 488.0;
+   double nSample_ = 1.36;
+   double dOx_ = 500.0;
+   int firstAngle_ = -50;
+   int lastAngle_ = 50;
+   String heightString_ = "16, 32, 48";
    
    public static void main( String[] args )
    { 
       double[] heights = {16.0, 24.0};
-      new SaimPlot().plotFig(wavelength, nSample, dOx, firstAngle, lastAngle, 
-              heights);
+      new SaimPlot().plotFig(488.0, 1.36, 500.0, -50, 50, heights);
    }
    
    public SaimPlot() {
@@ -78,16 +97,16 @@ public class SaimPlot implements PlugIn, DialogListener
       final NonBlockingGenericDialog gd = new NonBlockingGenericDialog( "Saim Plot" );
       
       
-      gd.addNumericField("Wavelenght (nm)", wavelength, 1);
-      gd.addNumericField("Sample Refractive Index", nSample, 2);
-      gd.addNumericField("Thickness of oxide layer (nm)", dOx, 1);
+      gd.addNumericField("Wavelenght (nm)", wavelength_, 1);
+      gd.addNumericField("Sample Refractive Index", nSample_, 2);
+      gd.addNumericField("Thickness of oxide layer (nm)", dOx_, 1);
       gd.setInsets(15,0,3);
       gd.addMessage("Angles to be plotted:");
-      gd.addNumericField("First angle", firstAngle, 0);
-      gd.addNumericField("Last angle", lastAngle, 0);
+      gd.addNumericField("First angle", firstAngle_, 0);
+      gd.addNumericField("Last angle", lastAngle_, 0);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Heights as comma separated values:");
-      gd.addStringField("Height in nm", heightString);
+      gd.addStringField("Height in nm", heightString_);
       gd.addPreviewCheckbox(null, "Plot");
 
       gd.hideCancelButton();
@@ -103,19 +122,19 @@ public class SaimPlot implements PlugIn, DialogListener
    @Override
    public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
       if (gd.isPreviewActive()) {
-         wavelength = gd.getNextNumber();
-         nSample = gd.getNextNumber();
-         dOx = gd.getNextNumber();
-         firstAngle = (int) gd.getNextNumber();
-         lastAngle = (int) gd.getNextNumber();
-         heightString = gd.getNextString();
-         String[] tokens = heightString.split("[,]");
+         wavelength_ = gd.getNextNumber();
+         nSample_ = gd.getNextNumber();
+         dOx_ = gd.getNextNumber();
+         firstAngle_ = (int) gd.getNextNumber();
+         lastAngle_ = (int) gd.getNextNumber();
+         heightString_ = gd.getNextString();
+         String[] tokens = heightString_.split("[,]");
          double[] heights = new double[tokens.length];
          for (int i = 0; i < tokens.length; i++) {
             heights[i] = Double.parseDouble(tokens[i]);
          }
          
-         plotFig(wavelength, nSample, dOx, firstAngle, lastAngle, heights);
+         plotFig(wavelength_, nSample_, dOx_, firstAngle_, lastAngle_, heights);
       }
       
       return true;
