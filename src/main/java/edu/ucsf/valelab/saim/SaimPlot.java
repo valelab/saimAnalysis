@@ -16,7 +16,7 @@ import org.jfree.data.xy.XYSeries;
  *
  * @author nico
  */
-public class Saim implements PlugIn, DialogListener
+public class SaimPlot implements PlugIn, DialogListener
 {
    Frame plotFrame_;      
       static double wavelength = 488.0;
@@ -29,11 +29,11 @@ public class Saim implements PlugIn, DialogListener
    public static void main( String[] args )
    { 
       double[] heights = {16.0, 24.0};
-      new Saim().plotFig(wavelength, nSample, dOx, firstAngle, lastAngle, 
+      new SaimPlot().plotFig(wavelength, nSample, dOx, firstAngle, lastAngle, 
               heights);
    }
    
-   public Saim() {
+   public SaimPlot() {
    }
    
    public void plotFig(double wavelength, double nSample, double dOx,
