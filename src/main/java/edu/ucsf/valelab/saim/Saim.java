@@ -39,12 +39,11 @@ public class Saim implements PlugIn, DialogListener
    public void plotFig(double wavelength, double nSample, double dOx,
            int firstAngle, int lastAngle, double[] heights) {
       
-      int n = 2;
-      double[] height =  { 16.0, 28.0, 40.0, 56.0, 72.0, 88.0 };
+      int n = heights.length;
       boolean[] showShapes = new boolean[n];
       XYSeries[] plots = new XYSeries[n];
       for (int i = 0; i < n; i++) {
-         plots[i] = new XYSeries("" + height[i] + "nm", false, false);
+         plots[i] = new XYSeries("" + heights[i] + "nm", false, false);
          showShapes[i] = false;
       }
       
@@ -53,7 +52,7 @@ public class Saim implements PlugIn, DialogListener
          // calculate for 16 nm
          for (int j = 0; j < n; j++) {
             double fieldStrength = SaimCalc.fieldStrength(
-                    wavelength, angle, nSample, dOx, height[j]);
+                    wavelength, angle, nSample, dOx, heights[j]);
             plots[j].add(i, fieldStrength);
          }
       }
