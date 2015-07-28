@@ -32,7 +32,7 @@ import java.util.prefs.Preferences;
 import org.jfree.data.xy.XYSeries;
 
 /**
- * 
+ * ImageJ plugin that plots theoretical SAIM curves
  *
  * @author nico
  */
