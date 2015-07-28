@@ -22,6 +22,7 @@ package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.calculations.SaimCalc;
 import edu.ucsf.valelab.saim.calculations.SaimFunctionFitter;
+import edu.ucsf.valelab.saim.data.SaimData;
 import edu.ucsf.valelab.saim.plot.PlotUtils;
 import ij.ImagePlus;
 import ij.gui.DialogListener;
@@ -46,14 +47,7 @@ import org.jfree.data.xy.XYSeries;
  * @author nico
  */
 public class SaimInspect implements PlugIn, DialogListener {
-   double wavelength_ = 488.0;
-   double nSample_ = 1.36;
-   double dOx_ = 500.0;
-   double firstAngle_ = -50;
-   double angleStep_ = 1;
-   double A_ = 1000.0;
-   double B_ = 5000.0;
-   double h_ = 100.0;
+   private final SaimData sd_ = new SaimData();
    
    Frame plotFrame_;
    
@@ -65,18 +59,18 @@ public class SaimInspect implements PlugIn, DialogListener {
      //       "This plugin plots the intensity values and the best fit");  
      //gd.setInsets(15,0,3);
       
-      gd.addNumericField("Wavelenght (nm)", wavelength_, 1);
-      gd.addNumericField("Sample Refractive Index", nSample_, 2);
-      gd.addNumericField("Thickness of oxide layer (nm)", dOx_, 1);
+      gd.addNumericField("Wavelenght (nm)", sd_.wavelength_, 1);
+      gd.addNumericField("Sample Refractive Index", sd_.nSample_, 2);
+      gd.addNumericField("Thickness of oxide layer (nm)", sd_.dOx_, 1);
       gd.setInsets(15,0,3);
       gd.addMessage("Angles:");
-      gd.addNumericField("First angle", firstAngle_, 0);
-      gd.addNumericField("Step size", angleStep_, 0);
+      gd.addNumericField("First angle", sd_.firstAngle_, 0);
+      gd.addNumericField("Step size", sd_.angleStep_, 0);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Guess:");
-      gd.addNumericField("A", A_, 0);
-      gd.addNumericField("B", B_, 0);
-      gd.addNumericField("Height (nm)", h_, 0);
+      gd.addNumericField("A", sd_.A_, 0);
+      gd.addNumericField("B", sd_.B_, 0);
+      gd.addNumericField("Height (nm)", sd_.h_, 0);
       
       gd.addPreviewCheckbox(null, "Show");
 
@@ -92,14 +86,14 @@ public class SaimInspect implements PlugIn, DialogListener {
    @Override
    public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
       if (gd.isPreviewActive()) {
-         wavelength_ = gd.getNextNumber();
-         nSample_ = gd.getNextNumber();
-         dOx_ = gd.getNextNumber();
-         firstAngle_ = (int) gd.getNextNumber();
-         angleStep_ = (int) gd.getNextNumber();
-         A_ = gd.getNextNumber();
-         B_ = gd.getNextNumber();
-         h_ = gd.getNextNumber();
+         sd_.wavelength_ = gd.getNextNumber();
+         sd_.nSample_ = gd.getNextNumber();
+         sd_.dOx_ = gd.getNextNumber();
+         sd_.firstAngle_ = (int) gd.getNextNumber();
+         sd_.angleStep_ = (int) gd.getNextNumber();
+         sd_.A_ = gd.getNextNumber();
+         sd_.B_ = gd.getNextNumber();
+         sd_.h_ = gd.getNextNumber();
          
          ImagePlus ip = ij.IJ.getImage();
          Roi roi = ip.getRoi();
@@ -124,32 +118,33 @@ public class SaimInspect implements PlugIn, DialogListener {
               new ArrayList<WeightedObservedPoint>();
 
          for (int i = 0; i < values.length; i++) {
-            double angle = firstAngle_ + i * angleStep_;
-            plots[0].add(firstAngle_ + i * angleStep_, values[i]);
+            double angle = sd_.firstAngle_ + i * sd_.angleStep_;
+            plots[0].add(sd_.firstAngle_ + i * sd_.angleStep_, values[i]);
             WeightedObservedPoint point = new WeightedObservedPoint(
                     1.0, Math.toRadians(angle), values[i]);
             points.add(point);
          }
          
          // create the fitter
-         SaimFunctionFitter sff = new SaimFunctionFitter(wavelength_, dOx_, nSample_);
-         double[] guess = new double[] {A_, B_, h_};
+         SaimFunctionFitter sff = new SaimFunctionFitter(
+                 sd_.wavelength_, sd_.dOx_, sd_.nSample_);
+         double[] guess = new double[] {sd_.A_, sd_.B_, sd_.h_};
          sff.setGuess(guess);
          final double[] result = sff.fit(points);
          ij.IJ.log("A: " + result[0] + ", B: " + result[1] + ", h: " + result[2]);
          for (int i = 0; i < values.length; i++) {
-            double angle = firstAngle_ + i * angleStep_;
-            double I = result[0] * SaimCalc.fieldStrength(wavelength_, 
-                    angle, nSample_, dOx_, result[2]) + result[1];
-            plots[1].add(firstAngle_ + i * angleStep_, I);
+            double angle = sd_.firstAngle_ + i * sd_.angleStep_;
+            double I = result[0] * SaimCalc.fieldStrength(sd_.wavelength_, 
+                    angle, sd_.nSample_, sd_.dOx_, result[2]) + result[1];
+            plots[1].add(sd_.firstAngle_ + i * sd_.angleStep_, I);
          }
          
          Preferences prefs = Preferences.userNodeForPackage(this.getClass());
          PlotUtils pu = new PlotUtils(prefs);
          if (plotFrame_ != null)
             plotFrame_.dispose();
-         plotFrame_ = pu.plotDataN("Saim at " + wavelength_ + " nm, n " + nSample_ + 
-              ", dOx: " + dOx_ + " nm", plots, 
+         plotFrame_ = pu.plotDataN("Saim at " + sd_.wavelength_ + " nm, n " + sd_.nSample_ + 
+              ", dOx: " + sd_.dOx_ + " nm", plots, 
               "Angle of incidence (degrees)", 
               "Normalized Intensity", showShapes, 
               "A: " + fmt(result[0]) + ", B:" + fmt(result[1]) + 

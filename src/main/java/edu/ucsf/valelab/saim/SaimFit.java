@@ -22,6 +22,7 @@
 package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.calculations.SaimFunctionFitter;
+import edu.ucsf.valelab.saim.data.SaimData;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.DialogListener;
@@ -29,10 +30,13 @@ import ij.gui.GenericDialog;
 import ij.gui.NonBlockingGenericDialog;
 import ij.plugin.PlugIn;
 import ij.process.FloatProcessor;
+import ij.process.ShortProcessor;
 import java.awt.AWTEvent;
 import java.awt.Frame;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.math3.exception.TooManyIterationsException;
 import org.apache.commons.math3.fitting.WeightedObservedPoint;
 
 /**
@@ -42,14 +46,9 @@ import org.apache.commons.math3.fitting.WeightedObservedPoint;
  * @author nico
  */
 public class SaimFit implements PlugIn, DialogListener {
-   double wavelength_ = 488.0;
-   double nSample_ = 1.36;
-   double dOx_ = 500.0;
-   double firstAngle_ = -50;
-   double angleStep_ = 1;
-   double A_ = 1000.0;
-   double B_ = 5000.0;
-   double h_ = 100.0;
+   private final SaimData sd_ = new SaimData();
+   private int threshold_ = 5000;
+   private final AtomicBoolean isRunning_ = new AtomicBoolean(false);
    
    Frame plotFrame_;
    
@@ -57,18 +56,21 @@ public class SaimFit implements PlugIn, DialogListener {
    public void run(String arg) {
       final NonBlockingGenericDialog gd = new NonBlockingGenericDialog( "Saim Fit" );
       
-      gd.addNumericField("Wavelenght (nm)", wavelength_, 1);
-      gd.addNumericField("Sample Refractive Index", nSample_, 2);
-      gd.addNumericField("Thickness of oxide layer (nm)", dOx_, 1);
+      gd.addNumericField("Wavelenght (nm)", sd_.wavelength_, 1);
+      gd.addNumericField("Sample Refractive Index", sd_.nSample_, 2);
+      gd.addNumericField("Thickness of oxide layer (nm)", sd_.dOx_, 1);
       gd.setInsets(15,0,3);
       gd.addMessage("Angles:");
-      gd.addNumericField("First angle", firstAngle_, 0);
-      gd.addNumericField("Step size", angleStep_, 0);
+      gd.addNumericField("First angle", sd_.firstAngle_, 0);
+      gd.addNumericField("Step size", sd_.angleStep_, 0);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Guess:");
-      gd.addNumericField("A", A_, 0);
-      gd.addNumericField("B", B_, 0);
-      gd.addNumericField("Height (nm)", h_, 0);
+      gd.addNumericField("A", sd_.A_, 0);
+      gd.addNumericField("B", sd_.B_, 0);
+      gd.addNumericField("Height (nm)", sd_.h_, 0);
+      gd.setInsets(15, 0, 3);
+      gd.addMessage("Only fit pixels higher then");
+      gd.addNumericField("Threshold", threshold_, 0);
       
       gd.addPreviewCheckbox(null, "Show");
 
@@ -84,22 +86,38 @@ public class SaimFit implements PlugIn, DialogListener {
    @Override
    public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
       if (gd.isPreviewActive()) {
-         wavelength_ = gd.getNextNumber();
-         nSample_ = gd.getNextNumber();
-         dOx_ = gd.getNextNumber();
-         firstAngle_ = (int) gd.getNextNumber();
-         angleStep_ = (int) gd.getNextNumber();
-         A_ = gd.getNextNumber();
-         B_ = gd.getNextNumber();
-         h_ = gd.getNextNumber();
+         sd_.wavelength_ = gd.getNextNumber();
+         sd_.nSample_ = gd.getNextNumber();
+         sd_.dOx_ = gd.getNextNumber();
+         sd_.firstAngle_ = (int) gd.getNextNumber();
+         sd_.angleStep_ = (int) gd.getNextNumber();
+         sd_.A_ = gd.getNextNumber();
+         sd_.B_ = gd.getNextNumber();
+         sd_.h_ = gd.getNextNumber();
+         threshold_ = (int) gd.getNextNumber();
+         
+         final ImagePlus ip = ij.IJ.getImage();
+         if (! (ip.getProcessor() instanceof ShortProcessor)) {
+            ij.IJ.showMessage("Can only do Saim Fit on 16 bit images");
+            return true;
+         }
+         
+         if (isRunning_.get()) {
+            ij.IJ.showMessage("Saim Fit is already running");
+            return true;
+         }
+         
+         isRunning_.set(true);
+         final long startTime = System.nanoTime();
          
          // this assumes a stack of shorts with NSlices > 1 and all other dimensions 1
          // TODO: check!
-         final ImagePlus ip = ij.IJ.getImage();
+        
+         final ImageStack is = ip.getImageStack();
          final int width = ip.getWidth();
          final int height = ip.getHeight();
-         final int stackSize = ip.getNSlices();
-         final ImageStack is = new ImageStack(width, height, 3);
+         final int stackSize = is.getSize();
+         final ImageStack newStack = new ImageStack(width, height, 3);
          final FloatProcessor ipA = new FloatProcessor(width, height);
          final FloatProcessor ipB = new FloatProcessor(width, height);
          final FloatProcessor iph = new FloatProcessor(width, height);
@@ -107,14 +125,40 @@ public class SaimFit implements PlugIn, DialogListener {
          // prepopulate an array with angles in radians
          final double[] angles = new double[stackSize];
          for (int i = 0; i < angles.length; i++) {
-            double angle = firstAngle_ + i * angleStep_;
+            double angle = sd_.firstAngle_ + i * sd_.angleStep_;
             angles[i] = Math.toRadians(angle);
          }
          
          // create the fitter
-         final SaimFunctionFitter sff = new SaimFunctionFitter(wavelength_, dOx_, nSample_);
-         double[] guess = new double[] {A_, B_, h_};
+         final SaimFunctionFitter sff = new SaimFunctionFitter(
+                 sd_.wavelength_, sd_.dOx_, sd_.nSample_);
+         double[] guess = new double[] {sd_.A_, sd_.B_, sd_.h_};
          sff.setGuess(guess);
+         
+         /*
+         
+         class runFit implements Runnable {
+            private final int startX_;
+            private final int lastX_;
+            
+            public runFit(int startX, int lastX) {
+               startX_ = startX;
+               lastX_ = lastX;
+            }
+            
+            
+            @Override
+            public void run() {
+               
+                // create the fitter
+         final SaimFunctionFitter sff = new SaimFunctionFitter(
+                 sd_.wavelength_, sd_.dOx_, sd_.nSample_);
+         double[] guess = new double[] {sd_.A_, sd_.B_, sd_.h_};
+         sff.setGuess(guess);
+         
+            }
+         }
+                 */
 
          class doWork implements Runnable {
 
@@ -126,28 +170,41 @@ public class SaimFit implements PlugIn, DialogListener {
                for (int x = 0; x < width; x++) {
                   ij.IJ.showProgress((double) x / (double) width);
                   for (int y = 0; y < height; y++) {
-                     points.clear();
-                     for (int i = 1; i < ip.getNSlices(); i++) {
-                        ip.setPosition(i);
-                        WeightedObservedPoint point = new WeightedObservedPoint(
-                                1.0, angles[i], ip.getProcessor().get(x, y));
-                        points.add(point);
+                     // only calculate if the pixels intensity is
+                     // above the threshold
+                     // TODO: calculate average of the stack and use threshold on that
+                     if (ip.getProcessor().get(x, y) > threshold_) {
+                        points.clear();
+                        for (int i = 1; i < ip.getNSlices(); i++) {
+                           WeightedObservedPoint point = new WeightedObservedPoint(
+                                   1.0, angles[i], is.getProcessor(i).get(x, y));
+                           points.add(point);
+                        }
+                        try {
+                           double[] result = sff.fit(points);
+                           ipA.setf(x, y, (float) result[0]);
+                           ipB.setf(x, y, (float) result[1]);
+                           iph.setf(x, y, (float) result[2]);
+                        } catch (TooManyIterationsException tiex) {
+                           ij.IJ.log("Failed to fit pixel " + x + ", " + y);
+                        }
                      }
-                     double[] result = sff.fit(points);
-                     ipA.setf(x, y, (float) result[0]);
-                     ipB.setf(x, y, (float) result[1]);
-                     iph.setf(x, y, (float) result[2]);
                   }
                }
 
-               is.setProcessor(ipA, 1);
-               is.setProcessor(ipB, 2);
-               is.setProcessor(iph, 3);
+               newStack.setProcessor(ipA, 1);
+               newStack.setProcessor(ipB, 2);
+               newStack.setProcessor(iph, 3);
 
-               ImagePlus rIp = new ImagePlus("Fit result", is);
+               ImagePlus rIp = new ImagePlus("Fit result", newStack);
                rIp.show();
+               ij.IJ.showProgress(0.0);
+               isRunning_.set(false);
+               ij.IJ.log("Analysis took " + 
+                       (System.nanoTime() - startTime) / 1000000 + "ms");
             }
          }
+         // TODO: make this multi-threaded (just slice up x)
          (new Thread(new doWork())).start();
 
       }
