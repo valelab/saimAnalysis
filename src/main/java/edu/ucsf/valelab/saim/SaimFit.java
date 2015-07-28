@@ -36,6 +36,7 @@ import java.awt.Frame;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.math3.exception.TooManyIterationsException;
 import org.apache.commons.math3.fitting.WeightedObservedPoint;
 
@@ -49,6 +50,7 @@ public class SaimFit implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
    private int threshold_ = 5000;
    private final AtomicBoolean isRunning_ = new AtomicBoolean(false);
+   private final AtomicInteger nrXProcessed_ = new AtomicInteger(0);
    
    Frame plotFrame_;
    
@@ -95,6 +97,7 @@ public class SaimFit implements PlugIn, DialogListener {
          sd_.B_ = gd.getNextNumber();
          sd_.h_ = gd.getNextNumber();
          threshold_ = (int) gd.getNextNumber();
+         final int nrThreads = ij.Prefs.getThreads();
          
          final ImagePlus ip = ij.IJ.getImage();
          if (! (ip.getProcessor() instanceof ShortProcessor)) {
@@ -128,47 +131,58 @@ public class SaimFit implements PlugIn, DialogListener {
             double angle = sd_.firstAngle_ + i * sd_.angleStep_;
             angles[i] = Math.toRadians(angle);
          }
+
          
-         // create the fitter
-         final SaimFunctionFitter sff = new SaimFunctionFitter(
-                 sd_.wavelength_, sd_.dOx_, sd_.nSample_);
-         double[] guess = new double[] {sd_.A_, sd_.B_, sd_.h_};
-         sff.setGuess(guess);
-         
-         /*
-         
-         class runFit implements Runnable {
-            private final int startX_;
-            private final int lastX_;
-            
-            public runFit(int startX, int lastX) {
-               startX_ = startX;
-               lastX_ = lastX;
-            }
-            
-            
+         class UserFeedback implements Runnable {
+            final AtomicBoolean stop_ = new AtomicBoolean(false);
+           
             @Override
             public void run() {
-               
-                // create the fitter
-         final SaimFunctionFitter sff = new SaimFunctionFitter(
-                 sd_.wavelength_, sd_.dOx_, sd_.nSample_);
-         double[] guess = new double[] {sd_.A_, sd_.B_, sd_.h_};
-         sff.setGuess(guess);
-         
+               while (!stop_.get()) {
+                  ij.IJ.showProgress(nrXProcessed_.get(), width);
+                  try {
+                     synchronized(nrXProcessed_) {
+                        nrXProcessed_.wait();
+                     }
+                  } catch (InterruptedException ex) {
+                     ij.IJ.log("userFeedback thread was interupted");
+                  }
+               }
+            }
+
+            public void stop() {
+               stop_.set(true);
+               synchronized(nrXProcessed_) {
+                  nrXProcessed_.notify();
+               }
             }
          }
-                 */
+         
+         class RunFit implements Runnable {
+            private final int startX_;
+            private final int numberX_;
 
-         class doWork implements Runnable {
+            public RunFit(int startX, int numberX) {
+               startX_ = startX;
+               numberX_ = numberX;
+            }
 
             @Override
             public void run() {
+
+               // create the fitter
+               final SaimFunctionFitter sff = new SaimFunctionFitter(
+                       sd_.wavelength_, sd_.dOx_, sd_.nSample_);
+               double[] guess = new double[]{sd_.A_, sd_.B_, sd_.h_};
+               sff.setGuess(guess);
+
+               
                // now cycle through the x/y pixels and fit each of them
                ArrayList<WeightedObservedPoint> points
                        = new ArrayList<WeightedObservedPoint>();
-               for (int x = 0; x < width; x++) {
-                  ij.IJ.showProgress((double) x / (double) width);
+               int lastX = startX_ + numberX_;
+               for (int x = startX_; x < lastX; x++) {
+                  //ij.IJ.showProgress((double) x / (double) width);
                   for (int y = 0; y < height; y++) {
                      // only calculate if the pixels intensity is
                      // above the threshold
@@ -190,6 +204,51 @@ public class SaimFit implements PlugIn, DialogListener {
                         }
                      }
                   }
+                  nrXProcessed_.getAndIncrement();
+                  synchronized(nrXProcessed_) {
+                     nrXProcessed_.notify();
+                  }
+               }
+            }
+         }
+
+
+         
+         class DoWork implements Runnable {
+
+            @Override
+            public void run() {
+               nrXProcessed_.set(0);
+               ij.IJ.showStatus("Saim Fit is running...");
+               Thread[] fitThreads = new Thread[nrThreads];
+               
+               // start all threads
+               int nrXPerThread = (width/nrThreads);
+               for (int i = 0; i < nrThreads; i++) {
+                  RunFit rf = new RunFit(0 + (i * nrXPerThread), nrXPerThread);
+                  fitThreads[i] = new Thread(rf);
+                  fitThreads[i].start();
+               }
+               UserFeedback uf = new UserFeedback();
+               Thread ufThread = new Thread(uf);
+               ufThread.start();
+               
+               
+               // wait for the threads to end 
+               // TODO: have a way to kill the threads
+               // TODO: have a timeout
+               for (int i = 0; i < nrThreads; i++) {
+                  try {
+                     fitThreads[i].join();
+                  } catch (InterruptedException ex) {
+                     ij.IJ.log("fitThread was interupted");
+                  }
+               }
+               uf.stop();
+               try {
+                  ufThread.join();
+               } catch (InterruptedException ex) {
+                  ij.IJ.log("fitThread was interupted");
                }
 
                newStack.setProcessor(ipA, 1);
@@ -198,14 +257,15 @@ public class SaimFit implements PlugIn, DialogListener {
 
                ImagePlus rIp = new ImagePlus("Fit result", newStack);
                rIp.show();
-               ij.IJ.showProgress(0.0);
+               ij.IJ.showProgress(1);
+               ij.IJ.showStatus("");
                isRunning_.set(false);
                ij.IJ.log("Analysis took " + 
                        (System.nanoTime() - startTime) / 1000000 + "ms");
             }
          }
          // TODO: make this multi-threaded (just slice up x)
-         (new Thread(new doWork())).start();
+         (new Thread(new DoWork())).start();
 
       }
 
