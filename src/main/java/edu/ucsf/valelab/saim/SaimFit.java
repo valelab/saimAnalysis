@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-//FILE:          SaimInspect.java
+//FILE:          SaimFit.java
 //PROJECT:       SAIM
 //-----------------------------------------------------------------------------
 //
@@ -95,56 +95,63 @@ public class SaimFit implements PlugIn, DialogListener {
          
          // this assumes a stack of shorts with NSlices > 1 and all other dimensions 1
          // TODO: check!
-         ImagePlus ip = ij.IJ.getImage();
-         int width = ip.getWidth();
-         int height = ip.getHeight();
-         int stackSize = ip.getNSlices();
-         ImageStack is = new ImageStack(width, height, 3);
-         FloatProcessor ipA = new FloatProcessor(width, height);
-         FloatProcessor ipB = new FloatProcessor(width, height);
-         FloatProcessor iph = new FloatProcessor(width, height);
+         final ImagePlus ip = ij.IJ.getImage();
+         final int width = ip.getWidth();
+         final int height = ip.getHeight();
+         final int stackSize = ip.getNSlices();
+         final ImageStack is = new ImageStack(width, height, 3);
+         final FloatProcessor ipA = new FloatProcessor(width, height);
+         final FloatProcessor ipB = new FloatProcessor(width, height);
+         final FloatProcessor iph = new FloatProcessor(width, height);
          
          // prepopulate an array with angles in radians
-         double[] angles = new double[stackSize];
+         final double[] angles = new double[stackSize];
          for (int i = 0; i < angles.length; i++) {
             double angle = firstAngle_ + i * angleStep_;
             angles[i] = Math.toRadians(angle);
          }
          
          // create the fitter
-         SaimFunctionFitter sff = new SaimFunctionFitter(wavelength_, dOx_, nSample_);
+         final SaimFunctionFitter sff = new SaimFunctionFitter(wavelength_, dOx_, nSample_);
          double[] guess = new double[] {A_, B_, h_};
          sff.setGuess(guess);
 
-         // now cycle through the x/y pixels and fit each of them
-         ArrayList<WeightedObservedPoint> points = 
-              new ArrayList<WeightedObservedPoint>();
-         for (int x = 0; x < width; x++) {
-            ij.IJ.showProgress((double) x / (double) width);
-            for (int y = 0; y < height; y++) {
-               points.clear();
-               for (int i = 1; i < ip.getNSlices(); i++) {
-                  ip.setPosition(i);
-                  WeightedObservedPoint point = new WeightedObservedPoint(
-                    1.0, angles[i], ip.getProcessor().get(x, y));
-                  points.add(point);
+         class doWork implements Runnable {
+
+            @Override
+            public void run() {
+               // now cycle through the x/y pixels and fit each of them
+               ArrayList<WeightedObservedPoint> points
+                       = new ArrayList<WeightedObservedPoint>();
+               for (int x = 0; x < width; x++) {
+                  ij.IJ.showProgress((double) x / (double) width);
+                  for (int y = 0; y < height; y++) {
+                     points.clear();
+                     for (int i = 1; i < ip.getNSlices(); i++) {
+                        ip.setPosition(i);
+                        WeightedObservedPoint point = new WeightedObservedPoint(
+                                1.0, angles[i], ip.getProcessor().get(x, y));
+                        points.add(point);
+                     }
+                     double[] result = sff.fit(points);
+                     ipA.setf(x, y, (float) result[0]);
+                     ipB.setf(x, y, (float) result[1]);
+                     iph.setf(x, y, (float) result[2]);
+                  }
                }
-               double[] result = sff.fit(points);
-               ipA.setf(x, y, (float) result[0]);
-               ipB.setf(x, y, (float) result[1]);
-               iph.setf(x, y, (float) result[2]);
+
+               is.setProcessor(ipA, 1);
+               is.setProcessor(ipB, 2);
+               is.setProcessor(iph, 3);
+
+               ImagePlus rIp = new ImagePlus("Fit result", is);
+               rIp.show();
             }
          }
-         
-         is.setProcessor(ipA, 1);
-         is.setProcessor(ipB, 2);
-         is.setProcessor(iph, 3);
-         
-         ImagePlus rIp = new ImagePlus("Fit result", is);
-         rIp.show();
+         (new Thread(new doWork())).start();
 
       }
-      
+
       return true;
    }
    
