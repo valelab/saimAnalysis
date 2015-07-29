@@ -74,7 +74,7 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.addMessage("Only fit pixels higher then");
       gd.addNumericField("Threshold", threshold_, 0);
       
-      gd.addPreviewCheckbox(null, "Show");
+      gd.addPreviewCheckbox(null, "Fit");
 
       gd.hideCancelButton();
       gd.setOKLabel("Close");
@@ -264,7 +264,7 @@ public class SaimFit implements PlugIn, DialogListener {
                        (System.nanoTime() - startTime) / 1000000 + "ms");
             }
          }
-         // TODO: make this multi-threaded (just slice up x)
+         
          (new Thread(new DoWork())).start();
 
       }

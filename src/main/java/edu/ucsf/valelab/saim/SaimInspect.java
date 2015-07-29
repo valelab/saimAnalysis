@@ -72,7 +72,7 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.addNumericField("B", sd_.B_, 0);
       gd.addNumericField("Height (nm)", sd_.h_, 0);
       
-      gd.addPreviewCheckbox(null, "Show");
+      gd.addPreviewCheckbox(null, "Inspect");
 
       gd.hideCancelButton();
       gd.setOKLabel("Close");
