@@ -1,3 +1,4 @@
+#Saim, an ImageJ/Fiji plugin
 Saim is short for Scanning Angle Interference Microscopy.  It is a fluorescence microscope technique used 
 to measure height differences with nanometer resolution.  The following publication describes it in full:  
 Paszek, M.J., DuFort, C.C., Rubashkin, M.G., Davidson, M.W., Thorn, K.S., Liphardt, J.T., and Weaver, V.M. (2012). 
