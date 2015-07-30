@@ -49,6 +49,8 @@ import org.apache.commons.math3.fitting.WeightedObservedPoint;
 public class SaimFit implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
    private int threshold_ = 5000;
+   private final String[] fitters_ = {"Curve Fitter", "Bounded Curve Fitter"};
+   private String fitter_ = "Curve Fitter";
    private final AtomicBoolean isRunning_ = new AtomicBoolean(false);
    private final AtomicInteger nrXProcessed_ = new AtomicInteger(0);
    
@@ -73,6 +75,8 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.setInsets(15, 0, 3);
       gd.addMessage("Only fit pixels higher then");
       gd.addNumericField("Threshold", threshold_, 0);
+      gd.setInsets(15, 0, 3);
+      gd.addChoice("Fitter", fitters_, fitter_);
       
       gd.addPreviewCheckbox(null, "Fit");
 
@@ -97,6 +101,7 @@ public class SaimFit implements PlugIn, DialogListener {
          sd_.B_ = gd.getNextNumber();
          sd_.h_ = gd.getNextNumber();
          threshold_ = (int) gd.getNextNumber();
+         fitter_ = gd.getNextChoice();
          final int nrThreads = ij.Prefs.getThreads();
          
          final ImagePlus ip = ij.IJ.getImage();
@@ -171,8 +176,9 @@ public class SaimFit implements PlugIn, DialogListener {
             public void run() {
 
                // create the fitter
+               boolean bounded = fitter_.equals("Bounded Curve Fitter");
                final SaimFunctionFitter sff = new SaimFunctionFitter(
-                       sd_.wavelength_, sd_.dOx_, sd_.nSample_);
+                       sd_.wavelength_, sd_.dOx_, sd_.nSample_, bounded);
                double[] guess = new double[]{sd_.A_, sd_.B_, sd_.h_};
                sff.setGuess(guess);
 

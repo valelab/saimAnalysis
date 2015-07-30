@@ -48,8 +48,10 @@ import org.jfree.data.xy.XYSeries;
  */
 public class SaimInspect implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
+   private final String[] fitters_ = {"Curve Fitter", "Bounded Curve Fitter"};
+   private String fitter_ = "Curve Fitter";
    
-   Frame plotFrame_;
+   private Frame plotFrame_;
    
    @Override
    public void run(String arg) {
@@ -71,6 +73,8 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.addNumericField("A", sd_.A_, 0);
       gd.addNumericField("B", sd_.B_, 0);
       gd.addNumericField("Height (nm)", sd_.h_, 0);
+      gd.setInsets(15, 0, 3);
+      gd.addChoice("Fitter", fitters_, fitter_);
       
       gd.addPreviewCheckbox(null, "Inspect");
 
@@ -126,8 +130,9 @@ public class SaimInspect implements PlugIn, DialogListener {
          }
          
          // create the fitter
+         boolean bounded = fitter_.equals("Bounded Curve Fitter");
          SaimFunctionFitter sff = new SaimFunctionFitter(
-                 sd_.wavelength_, sd_.dOx_, sd_.nSample_);
+                 sd_.wavelength_, sd_.dOx_, sd_.nSample_, bounded);
          double[] guess = new double[] {sd_.A_, sd_.B_, sd_.h_};
          sff.setGuess(guess);
          final double[] result = sff.fit(points);

@@ -36,9 +36,9 @@ public class SaimFunction implements UnivariateFunction,
    private final double wavelength_; // excitation wavelength in nm
    private final double dOx_;   // thickness of the oxide layer in nm
    private final double nSample_;  // refractive index of the sample
-   private double angle_ = 0.0;   // input in degrees, internally used in radians
-   private double A_ = 1.0; // parameter in field strength calculation
-   private double B_ = 0.0; // parameter in field stenght calculation
+   protected double angle_ = 0.0;   // input in degrees, internally used in radians
+   protected double A_ = 1.0; // parameter in field strength calculation
+   protected double B_ = 0.0; // parameter in field stenght calculation
    private final Map<Double, Complex> fresnelTE_;
    
    public int counter = 0;
