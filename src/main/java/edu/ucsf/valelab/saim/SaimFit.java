@@ -49,7 +49,7 @@ import org.apache.commons.math3.fitting.WeightedObservedPoint;
 public class SaimFit implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
    private int threshold_ = 5000;
-   private final String[] fitters_ = {"Curve Fitter", "Bounded Curve Fitter"};
+   private final String[] fitters_ = {"Curve Fitter", "Bounded Curve Fitter", "BOBYQA"};
    private String fitter_ = "Curve Fitter";
    private final AtomicBoolean isRunning_ = new AtomicBoolean(false);
    private final AtomicInteger nrXProcessed_ = new AtomicInteger(0);
@@ -177,6 +177,7 @@ public class SaimFit implements PlugIn, DialogListener {
 
                // create the fitter
                boolean bounded = fitter_.equals("Bounded Curve Fitter");
+               boolean fitBOBYQA = fitter_.equals("BOBYQA");
                final SaimFunctionFitter sff = new SaimFunctionFitter(
                        sd_.wavelength_, sd_.dOx_, sd_.nSample_, bounded);
                double[] guess = new double[]{sd_.A_, sd_.B_, sd_.h_};
