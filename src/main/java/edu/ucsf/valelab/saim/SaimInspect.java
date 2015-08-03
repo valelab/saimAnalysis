@@ -49,7 +49,7 @@ import org.jfree.data.xy.XYSeries;
 public class SaimInspect implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
    private final String[] fitters_ = {"Curve Fitter", "Bounded Curve Fitter"};
-   private String fitter_ = "Curve Fitter";
+   private final String fitter_ = "Curve Fitter";
    
    private Frame plotFrame_;
    
@@ -140,7 +140,7 @@ public class SaimInspect implements PlugIn, DialogListener {
          for (int i = 0; i < values.length; i++) {
             double angle = sd_.firstAngle_ + i * sd_.angleStep_;
             double I = result[0] * SaimCalc.fieldStrength(sd_.wavelength_, 
-                    angle, sd_.nSample_, sd_.dOx_, result[2]) + result[1];
+                    Math.toRadians(angle), sd_.nSample_, sd_.dOx_, result[2]) + result[1];
             plots[1].add(sd_.firstAngle_ + i * sd_.angleStep_, I);
          }
          

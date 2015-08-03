@@ -27,6 +27,7 @@ import org.apache.commons.math3.fitting.AbstractCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoint;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresBuilder;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem;
+import org.apache.commons.math3.fitting.leastsquares.ParameterValidator;
 import org.apache.commons.math3.linear.DiagonalMatrix;
 import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.optim.PointVectorValuePair;
@@ -92,6 +93,12 @@ public class SaimFunctionFitter extends AbstractCurveFitter {
       ConvergenceChecker<PointVectorValuePair> checker =
           new SimpleVectorValueChecker(1.0e-6, 1.0e-10);
       
+      // this parameter validator appears to have the same effect
+      // as using the SaimFunctionFitterWithBounds
+      double[] lowerBounds = {0.0, 0.0, 0.0};
+      double[] upperBounds = {64000, 64000, 1000};
+      ParameterValidator spv = new SaimParameterValidator(lowerBounds, upperBounds);
+      
       return new LeastSquaresBuilder().
               maxEvaluations(Integer.MAX_VALUE).
               maxIterations(maxIterations_).
@@ -99,6 +106,7 @@ public class SaimFunctionFitter extends AbstractCurveFitter {
               //checker(checker).
               start(guess_).
               target(target).
+              parameterValidator(spv).
               weight(new DiagonalMatrix(weights)).
               model(model.getModelFunction(), model.getModelFunctionJacobian()).
               build();

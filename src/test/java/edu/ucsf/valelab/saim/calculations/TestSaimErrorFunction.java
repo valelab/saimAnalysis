@@ -47,7 +47,7 @@ public class TestSaimErrorFunction extends TestCase {
       data.h_ = 75.0;
       
       
-      double maxError = 0.00000000001;
+      double maxError = 0.0000000001;
       
       // make a collection of "observed" points
       ArrayList<WeightedObservedPoint> points = 

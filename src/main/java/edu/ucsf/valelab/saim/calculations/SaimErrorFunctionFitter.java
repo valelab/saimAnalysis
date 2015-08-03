@@ -54,14 +54,12 @@ public class SaimErrorFunctionFitter {
       double[] lb = {0.0, 0.0, 0.0};
       double[] ub = {64000, 64000, 1000};
       SimpleBounds sb = new SimpleBounds(lb, ub);
-      double[] cost = {1.0, 1.0, 1.0};
       PointValuePair results = optimizer.optimize(
               new MaxEval(20000),
               GoalType.MINIMIZE,
               new InitialGuess(guess_),
               new ObjectiveFunction(ser),
               sb);
-              //new LinearConstraint(cost, Relationship.EQ, 30)); 
       System.out.println("Value: " + results.getValue());
       return results.getPoint();
               

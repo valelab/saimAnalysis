@@ -21,6 +21,7 @@
 
 package edu.ucsf.valelab.saim;
 
+import edu.ucsf.valelab.saim.calculations.SaimErrorFunction;
 import edu.ucsf.valelab.saim.calculations.SaimFunctionFitter;
 import edu.ucsf.valelab.saim.data.SaimData;
 import ij.ImagePlus;
@@ -125,10 +126,11 @@ public class SaimFit implements PlugIn, DialogListener {
          final int width = ip.getWidth();
          final int height = ip.getHeight();
          final int stackSize = is.getSize();
-         final ImageStack newStack = new ImageStack(width, height, 3);
+         final ImageStack newStack = new ImageStack(width, height, 4);
          final FloatProcessor ipA = new FloatProcessor(width, height);
          final FloatProcessor ipB = new FloatProcessor(width, height);
          final FloatProcessor iph = new FloatProcessor(width, height);
+         final FloatProcessor ipError = new FloatProcessor(width, height);
          
          // prepopulate an array with angles in radians
          final double[] angles = new double[stackSize];
@@ -206,6 +208,8 @@ public class SaimFit implements PlugIn, DialogListener {
                            ipA.setf(x, y, (float) result[0]);
                            ipB.setf(x, y, (float) result[1]);
                            iph.setf(x, y, (float) result[2]);
+                           SaimErrorFunction sef = new SaimErrorFunction(sd_, points);
+                           ipError.setf(x, y, (float) sef.value(result));
                         } catch (TooManyIterationsException tiex) {
                            ij.IJ.log("Failed to fit pixel " + x + ", " + y);
                         }
@@ -261,6 +265,7 @@ public class SaimFit implements PlugIn, DialogListener {
                newStack.setProcessor(ipA, 1);
                newStack.setProcessor(ipB, 2);
                newStack.setProcessor(iph, 3);
+               newStack.setProcessor(ipError, 4);
 
                ImagePlus rIp = new ImagePlus("Fit result", newStack);
                rIp.show();
