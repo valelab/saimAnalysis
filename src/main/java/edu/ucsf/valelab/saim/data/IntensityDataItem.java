@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-//FILE:          SaimData.java
+//FILE:          IntensityDataItem.java
 //PROJECT:       SAIM
 //-----------------------------------------------------------------------------
 //
@@ -21,19 +21,25 @@
 package edu.ucsf.valelab.saim.data;
 
 /**
- * Very simple data structure to hold parameters that are used over and over
- * again in the Saim calculations
+ * Simple data structure to hold measured and fitted data 
  * @author nico
  */
-public class SaimData {
-   public double wavelength_ = 488.0;
-   public double nSample_ = 1.36;
-   public double dOx_ = 1900.0;
-   public double firstAngle_ = -42;
-   public double angleStep_ = 1;
-   public double A_ = 1000.0;
-   public double B_ = 5000.0;
-   public double h_ = 100.0;
-   public boolean mirrorAround0_ = false;
-   public boolean zeroDoubled_ = false;
+
+public class IntensityDataItem {
+   private final double angleDegrees_;
+   private final double angleRadians_;
+   private final double intensity_;
+   
+   public IntensityDataItem(double angleDegrees, double intensity) {
+      angleDegrees_ = angleDegrees;
+      angleRadians_ = Math.toRadians(angleDegrees);
+      intensity_ = intensity;
+   }
+   
+   public double getAngleDegree() { return angleDegrees_; }
+   
+   public double getAngleRadians() { return angleRadians_; }
+   
+   public double getIntensity() { return intensity_; }
+   
 }
