@@ -43,6 +43,9 @@ public class BenchmarkCalculations extends TestCase{
     * @throws Exception 
     */
    public void test() throws Exception {
+      
+      long nrRuns = 100000000;
+      
       double wavelength = 488.0;
       double nSample = 1.36;
       double dOx = 500.0;
@@ -56,10 +59,8 @@ public class BenchmarkCalculations extends TestCase{
       
       // method 1
       long startTime = System.nanoTime();
-      long nrRuns = 100000000;
       double c = rTE.getReal();
       double d = rTE.getImaginary();
-
       for (int i = 0; i < nrRuns; i++) {
          double val = 1 + 2 * c * Math.cos(phaseDiff) - 
                  2 * d * Math.sin(phaseDiff) + c * c + d * d;

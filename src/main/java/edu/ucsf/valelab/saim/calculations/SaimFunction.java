@@ -20,6 +20,7 @@
 
 package edu.ucsf.valelab.saim.calculations;
 
+import edu.ucsf.valelab.saim.data.SaimData;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.math3.analysis.ParametricUnivariateFunction;
@@ -33,12 +34,8 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
  */
 public class SaimFunction implements UnivariateFunction, 
         ParametricUnivariateFunction {
-   private final double wavelength_; // excitation wavelength in nm
-   private final double dOx_;   // thickness of the oxide layer in nm
-   private final double nSample_;  // refractive index of the sample
+   protected SaimData sd_;
    protected double angle_ = 0.0;   // input in degrees, internally used in radians
-   protected double A_ = 1.0; // parameter in field strength calculation
-   protected double B_ = 0.0; // parameter in field stenght calculation
    private final Map<Double, Complex> fresnelTE_;
    
    public int counter = 0;
@@ -50,9 +47,10 @@ public class SaimFunction implements UnivariateFunction,
     * @param nSample  - refractive index of the sample (likely 1.36 or so)
     */
    public SaimFunction( double wavelength, double dOx, double nSample ) {
-      wavelength_ = wavelength;
-      dOx_ = dOx;
-      nSample_ = nSample;
+      sd_ = new SaimData();
+      sd_.wavelength_ = wavelength;
+      sd_.dOx_ = dOx;
+      sd_.nSample_ = nSample;
       fresnelTE_ = new HashMap<Double, Complex>(100);
    }
 
@@ -84,8 +82,13 @@ public class SaimFunction implements UnivariateFunction,
    public SaimFunction( double wavelength, double dOx, double nSample, 
            double angle, double A, double B ) {
       this(wavelength, dOx, nSample, angle);
-      A_ = A;
-      B_ = B;
+      sd_.A_ = A;
+      sd_.B_ = B;
+   }
+   
+   public SaimFunction(SaimData sd) {
+      sd_ = sd;
+      fresnelTE_ = new HashMap<Double, Complex>(100);
    }
    
    /**
@@ -97,7 +100,7 @@ public class SaimFunction implements UnivariateFunction,
       if (fresnelTE_.containsKey(angle)) {
          return fresnelTE_.get(angle);
       }
-      Complex val = SaimCalc.fresnelTE(wavelength_, angle, dOx_, nSample_);
+      Complex val = SaimCalc.fresnelTE(sd_.wavelength_, angle, sd_.dOx_, sd_.nSample_);
       fresnelTE_.put(angle, val);
       return val;
    }
@@ -113,7 +116,7 @@ public class SaimFunction implements UnivariateFunction,
       counter++;
       
       Complex rTE = getFresnelTE(angle_);
-      double phaseDiff = SaimCalc.PhaseDiff(wavelength_, angle_, nSample_, h);
+      double phaseDiff = SaimCalc.PhaseDiff(sd_.wavelength_, angle_, sd_.nSample_, h);
       double c = rTE.getReal();
       double d = rTE.getImaginary();
       double val = 1 + 2 * c * Math.cos(phaseDiff) - 
@@ -128,7 +131,7 @@ public class SaimFunction implements UnivariateFunction,
        *         fieldStrength.getImaginary() * fieldStrength.getImaginary() ;
        */
       
-      return A_ * val + B_;
+      return sd_.A_ * val + sd_.B_;
    }
 
 
@@ -146,8 +149,8 @@ public class SaimFunction implements UnivariateFunction,
    public double value(double x, double... parameters) {
       if (parameters.length != 3)
          throw new DimensionMismatchException(parameters.length, 3);
-      A_ = parameters[0];
-      B_ = parameters[1];
+      sd_.A_ = parameters[0];
+      sd_.B_ = parameters[1];
       angle_ = x;
       return value(parameters[2]);
    }
@@ -174,7 +177,7 @@ public class SaimFunction implements UnivariateFunction,
       
       // partial derivative for A is the square of |1+rTE*eiphi(h)|
       Complex rTE = getFresnelTE(angle_);
-      double f = 4.0 * Math.PI * nSample_ * Math.cos(angle_) / wavelength_;
+      double f = 4.0 * Math.PI * sd_.nSample_ * Math.cos(angle_) / sd_.wavelength_;
       double phaseDiff = f * h;
       double c = rTE.getReal();
       double d = rTE.getImaginary();

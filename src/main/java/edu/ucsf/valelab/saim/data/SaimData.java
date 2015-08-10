@@ -36,4 +36,19 @@ public class SaimData {
    public double h_ = 100.0;
    public boolean mirrorAround0_ = false;
    public boolean zeroDoubled_ = false;
+   
+   public SaimData copy() {
+      SaimData cp = new SaimData();
+      cp.wavelength_ = wavelength_;
+      cp.nSample_ = nSample_;
+      cp.dOx_ = dOx_;
+      cp.firstAngle_ = firstAngle_;
+      cp.angleStep_ = angleStep_;
+      cp.A_ = A_;
+      cp.B_ = B_;
+      cp.h_ = h_;
+      cp.mirrorAround0_ = mirrorAround0_;
+      cp.zeroDoubled_ = zeroDoubled_;
+      return cp;
+   }
 }

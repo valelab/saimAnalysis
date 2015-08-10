@@ -45,13 +45,8 @@ public class SaimFunctionFitter extends AbstractCurveFitter {
    private double[] guess_ = { 1.0, 1.0, 1.0 };
    private int maxIterations_ = 100;
 
-   public SaimFunctionFitter(double wavelength, double dOx, double nSample, 
-           boolean bounded) {
-      if (!bounded)
+   public SaimFunctionFitter(double wavelength, double dOx, double nSample) {
          saimFunction_ = new SaimFunction(wavelength, dOx, nSample);
-      else 
-         saimFunction_ = new SaimFunctionWithBounds(wavelength, dOx, nSample);
-      
    }
 
    public void setGuess(double[] guess) {

@@ -30,9 +30,20 @@ public class IntensityDataItem {
    private final double angleRadians_;
    private final double intensity_;
    
-   public IntensityDataItem(double angleDegrees, double intensity) {
+   public IntensityDataItem(double angle, double intensity, boolean isRadians) {
+      if (isRadians) {
+         angleRadians_ = angle;
+         angleDegrees_ = Math.toDegrees(angle);
+      } else { // angle was given in degrees
+         angleDegrees_ = angle;
+         angleRadians_ = Math.toRadians(angle);
+      }
+      intensity_ = intensity;
+   }
+   
+   public IntensityDataItem(double angleDegrees, double angleRadians, double intensity) {
       angleDegrees_ = angleDegrees;
-      angleRadians_ = Math.toRadians(angleDegrees);
+      angleRadians_ = angleRadians;
       intensity_ = intensity;
    }
    

@@ -20,6 +20,7 @@
 
 package edu.ucsf.valelab.saim.calculations;
 
+import edu.ucsf.valelab.saim.data.SaimData;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 
 /**
@@ -31,6 +32,10 @@ public class SaimFunctionWithBounds extends SaimFunction {
    
    public SaimFunctionWithBounds( double wavelength, double dOx, double nSample ) {
       super(wavelength, dOx, nSample);
+   }
+   
+   public SaimFunctionWithBounds( SaimData sd ) {
+      super(sd);
    }
    
   
@@ -63,8 +68,8 @@ public class SaimFunctionWithBounds extends SaimFunction {
    public double value(double x, double... parameters) {
       if (parameters.length != 3)
          throw new DimensionMismatchException(parameters.length, 3);
-      A_ = parameters[0];
-      B_ = parameters[1];
+      sd_.A_ = parameters[0];
+      sd_.B_ = parameters[1];
       angle_ = x;
       if (parameters[0] < 0 || parameters[1] < 0 || parameters[2] < 0) {
          return Double.MAX_VALUE;

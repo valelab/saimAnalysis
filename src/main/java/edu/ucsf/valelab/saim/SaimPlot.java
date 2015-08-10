@@ -42,8 +42,8 @@ public class SaimPlot implements PlugIn, DialogListener
    double wavelength_ = 488.0;
    double nSample_ = 1.36;
    double dOx_ = 500.0;
-   int firstAngle_ = -50;
-   int lastAngle_ = 50;
+   int firstAngle_ = -42;
+   int lastAngle_ = 42;
    String heightString_ = "16, 32, 48";
    
    public static void main( String[] args )

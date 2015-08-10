@@ -39,13 +39,22 @@ public class IntensityData {
       data_ = new ArrayList<IntensityDataItem>();
    }
    
-   public void add(double angleDegree, double intensity) {
-      IntensityDataItem item = new IntensityDataItem(angleDegree, intensity);
+   public void add(double angle, double intensity, boolean isRadians) {
+      IntensityDataItem item = new IntensityDataItem(angle, intensity, isRadians);
+      data_.add(item);
+   }
+   
+   public void add (double angleDegrees, double angleRadians, double intensity) {
+      IntensityDataItem item = new IntensityDataItem(angleDegrees, angleRadians, intensity);
       data_.add(item);
    }
    
    public int size() {
       return data_.size();
+   }
+   
+   public void clear() {
+      data_.clear();
    }
    
    public double avg() {
@@ -57,7 +66,7 @@ public class IntensityData {
    }
    
    /**
-    * Output as needed by apache commons Math library
+    * Output as needed by apache commons Math library for fitting
     * Currently assigns the weight 1.0 to all points
     * @return list of weightedObservedPoints for fitting
     */

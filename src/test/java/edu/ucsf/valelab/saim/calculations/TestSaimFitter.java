@@ -61,8 +61,7 @@ public class TestSaimFitter extends TestCase {
        
        
       // create the fitter
-      SaimFunctionFitter sff = new SaimFunctionFitter(wavelength, dOx, nSample, 
-              false);
+      SaimFunctionFitter sff = new SaimFunctionFitter(wavelength, dOx, nSample);
       double[] values = new double[] {A, B, h};
       
       // test by varying the input for height
