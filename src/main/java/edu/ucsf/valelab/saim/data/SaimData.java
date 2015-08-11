@@ -34,6 +34,7 @@ public class SaimData {
    public double A_ = 1000.0;
    public double B_ = 5000.0;
    public double h_ = 100.0;
+   public int threshold_ = 5000;
    public boolean mirrorAround0_ = false;
    public boolean zeroDoubled_ = false;
    

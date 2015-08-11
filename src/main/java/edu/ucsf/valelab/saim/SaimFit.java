@@ -20,12 +20,7 @@
 
 package edu.ucsf.valelab.saim;
 
-import edu.ucsf.valelab.saim.calculations.SaimFunction;
-import edu.ucsf.valelab.saim.calculations.SaimFunctionFitter;
-import edu.ucsf.valelab.saim.calculations.SaimUtils;
-import edu.ucsf.valelab.saim.data.IntensityData;
 import edu.ucsf.valelab.saim.data.SaimData;
-import edu.ucsf.valelab.saim.exceptions.InvalidInputException;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.DialogListener;
@@ -39,7 +34,6 @@ import java.awt.Frame;
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.math3.exception.TooManyIterationsException;
 
 /**
  * Plugin that fits all pixels of a stack using the Saim equation
@@ -49,7 +43,6 @@ import org.apache.commons.math3.exception.TooManyIterationsException;
  */
 public class SaimFit implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
-   private int threshold_ = 5000;
    private final AtomicBoolean isRunning_ = new AtomicBoolean(false);
    
    Frame plotFrame_;
@@ -74,7 +67,7 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.addNumericField("Height (nm)", sd_.h_, 0);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Only fit pixels higher then");
-      gd.addNumericField("Threshold", threshold_, 0);
+      gd.addNumericField("Threshold", sd_.threshold_, 0);
       gd.setInsets(15, 0, 3);
       
       gd.addPreviewCheckbox(null, "Fit");
@@ -102,7 +95,7 @@ public class SaimFit implements PlugIn, DialogListener {
          sd_.B_ = gd.getNextNumber();
          sd_.h_ = gd.getNextNumber();
          
-         threshold_ = (int) gd.getNextNumber();
+         sd_.threshold_ = (int) gd.getNextNumber();
          
          
          
@@ -135,94 +128,6 @@ public class SaimFit implements PlugIn, DialogListener {
 
 
 
-         class RunFit implements Runnable {
-
-            private final int startX_;
-            private final int numberX_;
-            private final SaimData sd_;
-            private final ImagePlus ip_;
-            private final FloatProcessor[] fpOut_;
-            private final AtomicInteger nrXProcessed_;
-
-            public RunFit(int startX, int numberX, SaimData sd, ImagePlus ip,
-                    FloatProcessor[] fpOut, AtomicInteger nrXProcessed) {
-               startX_ = startX;
-               numberX_ = numberX;
-               sd_ = sd;
-               ip_ = ip;
-               fpOut_ = fpOut;
-               nrXProcessed_ = nrXProcessed;
-            }
-
-            @Override
-            public void run() {
-               // prepopulate a arrays with angles in radians and in degrees
-               final double[] anglesRadians = new double[ip.getNSlices()];
-               final double[] anglesDegrees = new double[ip.getNSlices()];
-               for (int i = 0; i < anglesRadians.length; i++) {
-                  double angle = sd_.firstAngle_ + i * sd_.angleStep_;
-                  anglesDegrees[i] = angle;
-                  anglesRadians[i] = Math.toRadians(angle);
-               }
-               final ImageStack is = ip.getImageStack();
-               final int width = ip.getWidth();
-               final int height = ip.getHeight();
-
-               // create the fitter
-               final SaimFunctionFitter sff = new SaimFunctionFitter(
-                       sd_.wavelength_, sd_.dOx_, sd_.nSample_);
-               final SaimFunction sf = new SaimFunction(sd_);
-               double[] guess = new double[]{sd_.A_, sd_.B_, sd_.h_};
-               sff.setGuess(guess);
-
-               // now cycle through the x/y pixels and fit each of them
-               IntensityData observed = new IntensityData();
-               IntensityData calculated = new IntensityData();
-               int lastX = startX_ + numberX_;
-               try {
-                  for (int x = startX_; x < lastX; x++) {
-                     for (int y = 0; y < height; y++) {
-                        // only calculate if the pixels intensity is
-                        // above the threshold
-                        // TODO: calculate average of the stack and use threshold on that
-                        if (ip_.getProcessor().get(x, y) > threshold_) {
-                           observed.clear();
-                           float[] values = new float[ip_.getNSlices()];
-                           for (int i = 0; i < ip_.getNSlices(); i++) {
-                              values[i] = is.getProcessor(i + 1).get(x, y);
-                           }
-                           SaimUtils.organize(observed, sd_, values, anglesDegrees,
-                                   anglesRadians);
-
-                           try {
-                              double[] result = sff.fit(
-                                      observed.getWeightedObservedPoints());
-                              fpOut_[0].setf(x, y, (float) result[0]);
-                              fpOut_[1].setf(x, y, (float) result[1]);
-                              fpOut_[2].setf(x, y, (float) result[2]);
-                              calculated.clear();
-                              SaimUtils.predictValues(observed, calculated, result, sf);
-                              try {
-                                 double r2 = SaimUtils.getRSquared(observed, calculated);
-                                 fpOut_[3].setf(x, y, (float) r2);
-                              } catch (InvalidInputException ex) {
-                                 ij.IJ.log("Observed and Calculated datasets differe in size");
-                              }
-                           } catch (TooManyIterationsException tiex) {
-                              ij.IJ.log("Failed to fit pixel " + x + ", " + y);
-                           }
-                        }
-                     }
-                     nrXProcessed_.getAndIncrement();
-                     synchronized (nrXProcessed_) {
-                        ij.IJ.showProgress(nrXProcessed_.get(), width);
-                     }
-                  }
-               } catch (InvalidInputException ex) {
-                  ij.IJ.error("Saim Fit", ex.getMessage());
-               }
-            }
-         }
 
 
          
@@ -239,7 +144,7 @@ public class SaimFit implements PlugIn, DialogListener {
                // start all threads
                int nrXPerThread = (width/nrThreads);
                for (int i = 0; i < nrThreads; i++) {
-                  RunFit rf = new RunFit(0 + (i * nrXPerThread), nrXPerThread, 
+                  RunTheFit rf = new RunTheFit(0 + (i * nrXPerThread), nrXPerThread, 
                           sd_.copy(), ip, outputFP, nrXProcessed_);
                   fitThreads[i] = new Thread(rf);
                   fitThreads[i].start();
