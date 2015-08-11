@@ -22,18 +22,15 @@ package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.data.SaimData;
 import ij.ImagePlus;
-import ij.ImageStack;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.gui.NonBlockingGenericDialog;
 import ij.plugin.PlugIn;
-import ij.process.FloatProcessor;
 import ij.process.ShortProcessor;
 import java.awt.AWTEvent;
 import java.awt.Frame;
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Plugin that fits all pixels of a stack using the Saim equation
@@ -44,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SaimFit implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
    private final AtomicBoolean isRunning_ = new AtomicBoolean(false);
+   private OverseeTheFit oft_;
    
    Frame plotFrame_;
    
@@ -83,6 +81,17 @@ public class SaimFit implements PlugIn, DialogListener {
 
    @Override
    public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
+      
+      if (!gd.isPreviewActive()) {
+         if (isRunning_.get()) {  
+            // try to abort the analysis
+            if (oft_ != null && oft_.isAlive()) {
+               // note, there could be a race condition here, probably not worth looking into
+               oft_.stopRun();
+            }
+         }
+      }
+      
       if (gd.isPreviewActive()) {
          sd_.wavelength_ = gd.getNextNumber();
          sd_.nSample_ = gd.getNextNumber();
@@ -96,97 +105,20 @@ public class SaimFit implements PlugIn, DialogListener {
          sd_.h_ = gd.getNextNumber();
          
          sd_.threshold_ = (int) gd.getNextNumber();
-         
-         
-         
-         final ImagePlus ip = ij.IJ.getImage();
-         if (! (ip.getProcessor() instanceof ShortProcessor)) {
-            ij.IJ.showMessage("Can only do Saim Fit on 16 bit images");
-            return true;
-         }
-         
+                 
          if (isRunning_.get()) {
             ij.IJ.showMessage("Saim Fit is already running");
             return true;
          }
          
          isRunning_.set(true);
-         final long startTime = System.nanoTime();
+
+         oft_ = new OverseeTheFit(sd_, isRunning_);
          
-         // this assumes a stack of shorts with NSlices > 1 and all other dimensions 1
-         // TODO: check!
-         
-         final int width = ip.getWidth();
-         final int height = ip.getHeight();
-         final ImageStack newStack = new ImageStack(width, height, 4);
-         final FloatProcessor[] outputFP = new FloatProcessor[4];
-         for (int i = 0; i < 4; i++) {
-            final FloatProcessor fp = new FloatProcessor(width, height);
-            outputFP[i] = fp;
-         }
-
-
-
-
-
-
-         
-         class DoWork implements Runnable {
-            private final AtomicInteger nrXProcessed_ = new AtomicInteger(0);
-            
-            @Override
-            public void run() {
-               nrXProcessed_.set(0);
-               ij.IJ.showStatus("Saim Fit is running...");
-               final int nrThreads = ij.Prefs.getThreads();
-               Thread[] fitThreads = new Thread[nrThreads];
-               
-               // start all threads
-               int nrXPerThread = (width/nrThreads);
-               for (int i = 0; i < nrThreads; i++) {
-                  RunTheFit rf = new RunTheFit(0 + (i * nrXPerThread), nrXPerThread, 
-                          sd_.copy(), ip, outputFP, nrXProcessed_);
-                  fitThreads[i] = new Thread(rf);
-                  fitThreads[i].start();
-               } 
-               
-               // wait for the threads to end 
-               // TODO: have a way to kill the threads
-               // TODO: have a timeout
-               try {
-                  for (int i = 0; i < nrThreads; i++) {
-                     fitThreads[i].join();
-                  }
-                  for (int i = 0; i < 4; i++) {
-                     newStack.setProcessor(outputFP[i], i + 1);
-                  }
-
-                  ImagePlus rIp = new ImagePlus("Fit result", newStack);
-                  rIp.show();
-                  ij.IJ.showProgress(1);
-                  ij.IJ.showStatus("");
-                  isRunning_.set(false);
-                  ij.IJ.log("Analysis took "
-                          + (System.nanoTime() - startTime) / 1000000 + "ms");
-               } catch (InterruptedException ex) {
-                  ij.IJ.log("fitThread was interupted");
-               }
-            }
-         }
-         
-         DoWork workThread = new DoWork();
-
-         (new Thread(workThread)).start();
-
+         oft_.start();
       }
 
       return true;
-   }
-   
-   public static String fmt(double d) {
-      DecimalFormat df = new DecimalFormat("#.#");
-      String s = df.format(d);
-      return s;
    }
    
 }

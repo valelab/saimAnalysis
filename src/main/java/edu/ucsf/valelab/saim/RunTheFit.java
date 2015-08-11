@@ -29,6 +29,7 @@ import edu.ucsf.valelab.saim.exceptions.InvalidInputException;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.FloatProcessor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.math3.exception.TooManyIterationsException;
 
@@ -36,7 +37,7 @@ import org.apache.commons.math3.exception.TooManyIterationsException;
  *
  * @author nico
  */
-public class RunTheFit implements Runnable {
+public class RunTheFit extends Thread {
 
    private final int startX_;
    private final int numberX_;
@@ -44,6 +45,7 @@ public class RunTheFit implements Runnable {
    private final ImagePlus ip_;
    private final FloatProcessor[] fpOut_;
    private final AtomicInteger nrXProcessed_;
+   private final AtomicBoolean stop_ = new AtomicBoolean(false);
 
    public RunTheFit(int startX, int numberX, SaimData sd, ImagePlus ip,
            FloatProcessor[] fpOut, AtomicInteger nrXProcessed) {
@@ -83,7 +85,10 @@ public class RunTheFit implements Runnable {
       try {
          for (int x = startX_; x < lastX; x++) {
             for (int y = 0; y < height; y++) {
-                        // only calculate if the pixels intensity is
+               if (stop_.get()) {
+                  return;
+               }
+               // only calculate if the pixels intensity is
                // above the threshold
                // TODO: calculate average of the stack and use threshold on that
                if (ip_.getProcessor().get(x, y) > sd_.threshold_) {
@@ -123,4 +128,12 @@ public class RunTheFit implements Runnable {
          ij.IJ.error("Saim Fit", ex.getMessage());
       }
    }
+   
+   /**
+    * Method to set a stop flag
+    */
+   public void stopRun() {
+      stop_.set(true);
+   }
+   
 }
