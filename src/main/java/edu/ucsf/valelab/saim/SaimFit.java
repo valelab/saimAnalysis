@@ -51,7 +51,6 @@ public class SaimFit implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
    private int threshold_ = 5000;
    private final AtomicBoolean isRunning_ = new AtomicBoolean(false);
-   private final AtomicInteger nrXProcessed_ = new AtomicInteger(0);
    
    Frame plotFrame_;
    
@@ -105,7 +104,7 @@ public class SaimFit implements PlugIn, DialogListener {
          
          threshold_ = (int) gd.getNextNumber();
          
-         final int nrThreads = ij.Prefs.getThreads();
+         
          
          final ImagePlus ip = ij.IJ.getImage();
          if (! (ip.getProcessor() instanceof ShortProcessor)) {
@@ -123,46 +122,57 @@ public class SaimFit implements PlugIn, DialogListener {
          
          // this assumes a stack of shorts with NSlices > 1 and all other dimensions 1
          // TODO: check!
-        
-         final ImageStack is = ip.getImageStack();
+         
          final int width = ip.getWidth();
          final int height = ip.getHeight();
-         final int stackSize = is.getSize();
          final ImageStack newStack = new ImageStack(width, height, 4);
-         final FloatProcessor ipA = new FloatProcessor(width, height);
-         final FloatProcessor ipB = new FloatProcessor(width, height);
-         final FloatProcessor iph = new FloatProcessor(width, height);
-         final FloatProcessor ipError = new FloatProcessor(width, height);
-
-         // prepopulate a arrays with angles in radians and in degrees
-         final double[] anglesRadians = new double[stackSize];
-         final double[] anglesDegrees = new double[stackSize];
-         for (int i = 0; i < anglesRadians.length; i++) {
-            double angle = sd_.firstAngle_ + i * sd_.angleStep_;
-            anglesDegrees[i] = angle;
-            anglesRadians[i] = Math.toRadians(angle);
+         final FloatProcessor[] outputFP = new FloatProcessor[4];
+         for (int i = 0; i < 4; i++) {
+            final FloatProcessor fp = new FloatProcessor(width, height);
+            outputFP[i] = fp;
          }
+
+
 
 
          class RunFit implements Runnable {
 
             private final int startX_;
             private final int numberX_;
+            private final SaimData sd_;
+            private final ImagePlus ip_;
+            private final FloatProcessor[] fpOut_;
+            private final AtomicInteger nrXProcessed_;
 
-            public RunFit(int startX, int numberX) {
+            public RunFit(int startX, int numberX, SaimData sd, ImagePlus ip,
+                    FloatProcessor[] fpOut, AtomicInteger nrXProcessed) {
                startX_ = startX;
                numberX_ = numberX;
+               sd_ = sd;
+               ip_ = ip;
+               fpOut_ = fpOut;
+               nrXProcessed_ = nrXProcessed;
             }
 
             @Override
             public void run() {
+               // prepopulate a arrays with angles in radians and in degrees
+               final double[] anglesRadians = new double[ip.getNSlices()];
+               final double[] anglesDegrees = new double[ip.getNSlices()];
+               for (int i = 0; i < anglesRadians.length; i++) {
+                  double angle = sd_.firstAngle_ + i * sd_.angleStep_;
+                  anglesDegrees[i] = angle;
+                  anglesRadians[i] = Math.toRadians(angle);
+               }
+               final ImageStack is = ip.getImageStack();
+               final int width = ip.getWidth();
+               final int height = ip.getHeight();
 
                // create the fitter
-               SaimData sd = sd_.copy();
                final SaimFunctionFitter sff = new SaimFunctionFitter(
-                       sd.wavelength_, sd.dOx_, sd.nSample_);
-               final SaimFunction sf = new SaimFunction(sd);
-               double[] guess = new double[]{sd.A_, sd.B_, sd.h_};
+                       sd_.wavelength_, sd_.dOx_, sd_.nSample_);
+               final SaimFunction sf = new SaimFunction(sd_);
+               double[] guess = new double[]{sd_.A_, sd_.B_, sd_.h_};
                sff.setGuess(guess);
 
                // now cycle through the x/y pixels and fit each of them
@@ -175,26 +185,26 @@ public class SaimFit implements PlugIn, DialogListener {
                         // only calculate if the pixels intensity is
                         // above the threshold
                         // TODO: calculate average of the stack and use threshold on that
-                        if (ip.getProcessor().get(x, y) > threshold_) {
+                        if (ip_.getProcessor().get(x, y) > threshold_) {
                            observed.clear();
-                           float[] values = new float[ip.getNSlices()];
-                           for (int i = 0; i < ip.getNSlices(); i++) {
+                           float[] values = new float[ip_.getNSlices()];
+                           for (int i = 0; i < ip_.getNSlices(); i++) {
                               values[i] = is.getProcessor(i + 1).get(x, y);
                            }
-                           SaimUtils.organize(observed, sd, values, anglesDegrees,
+                           SaimUtils.organize(observed, sd_, values, anglesDegrees,
                                    anglesRadians);
 
                            try {
                               double[] result = sff.fit(
                                       observed.getWeightedObservedPoints());
-                              ipA.setf(x, y, (float) result[0]);
-                              ipB.setf(x, y, (float) result[1]);
-                              iph.setf(x, y, (float) result[2]);
+                              fpOut_[0].setf(x, y, (float) result[0]);
+                              fpOut_[1].setf(x, y, (float) result[1]);
+                              fpOut_[2].setf(x, y, (float) result[2]);
                               calculated.clear();
                               SaimUtils.predictValues(observed, calculated, result, sf);
                               try {
                                  double r2 = SaimUtils.getRSquared(observed, calculated);
-                                 ipError.setf(x, y, (float) r2);
+                                 fpOut_[3].setf(x, y, (float) r2);
                               } catch (InvalidInputException ex) {
                                  ij.IJ.log("Observed and Calculated datasets differe in size");
                               }
@@ -217,17 +227,20 @@ public class SaimFit implements PlugIn, DialogListener {
 
          
          class DoWork implements Runnable {
-
+            private final AtomicInteger nrXProcessed_ = new AtomicInteger(0);
+            
             @Override
             public void run() {
                nrXProcessed_.set(0);
                ij.IJ.showStatus("Saim Fit is running...");
+               final int nrThreads = ij.Prefs.getThreads();
                Thread[] fitThreads = new Thread[nrThreads];
                
                // start all threads
                int nrXPerThread = (width/nrThreads);
                for (int i = 0; i < nrThreads; i++) {
-                  RunFit rf = new RunFit(0 + (i * nrXPerThread), nrXPerThread);
+                  RunFit rf = new RunFit(0 + (i * nrXPerThread), nrXPerThread, 
+                          sd_.copy(), ip, outputFP, nrXProcessed_);
                   fitThreads[i] = new Thread(rf);
                   fitThreads[i].start();
                } 
@@ -239,11 +252,9 @@ public class SaimFit implements PlugIn, DialogListener {
                   for (int i = 0; i < nrThreads; i++) {
                      fitThreads[i].join();
                   }
-
-                  newStack.setProcessor(ipA, 1);
-                  newStack.setProcessor(ipB, 2);
-                  newStack.setProcessor(iph, 3);
-                  newStack.setProcessor(ipError, 4);
+                  for (int i = 0; i < 4; i++) {
+                     newStack.setProcessor(outputFP[i], i + 1);
+                  }
 
                   ImagePlus rIp = new ImagePlus("Fit result", newStack);
                   rIp.show();
