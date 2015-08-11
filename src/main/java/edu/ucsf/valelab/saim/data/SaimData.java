@@ -48,6 +48,7 @@ public class SaimData {
       cp.A_ = A_;
       cp.B_ = B_;
       cp.h_ = h_;
+      cp.threshold_ = threshold_;
       cp.mirrorAround0_ = mirrorAround0_;
       cp.zeroDoubled_ = zeroDoubled_;
       return cp;
