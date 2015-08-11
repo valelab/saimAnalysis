@@ -18,7 +18,6 @@
 //               CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 //               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
 
-
 package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.calculations.SaimFunction;
@@ -135,7 +134,7 @@ public class SaimFit implements PlugIn, DialogListener {
          final FloatProcessor iph = new FloatProcessor(width, height);
          final FloatProcessor ipError = new FloatProcessor(width, height);
 
-         // prepopulate an array with anglesRadians in radians
+         // prepopulate a arrays with angles in radians and in degrees
          final double[] anglesRadians = new double[stackSize];
          final double[] anglesDegrees = new double[stackSize];
          for (int i = 0; i < anglesRadians.length; i++) {
@@ -144,31 +143,6 @@ public class SaimFit implements PlugIn, DialogListener {
             anglesRadians[i] = Math.toRadians(angle);
          }
 
-         class UserFeedback implements Runnable {
-
-            final AtomicBoolean stop_ = new AtomicBoolean(false);
-
-            @Override
-            public void run() {
-               while (!stop_.get()) {
-                  ij.IJ.showProgress(nrXProcessed_.get(), width);
-                  try {
-                     synchronized (nrXProcessed_) {
-                        nrXProcessed_.wait();
-                     }
-                  } catch (InterruptedException ex) {
-                     ij.IJ.log("userFeedback thread was interupted");
-                  }
-               }
-            }
-
-            public void stop() {
-               stop_.set(true);
-               synchronized (nrXProcessed_) {
-                  nrXProcessed_.notify();
-               }
-            }
-         }
 
          class RunFit implements Runnable {
 
@@ -198,7 +172,7 @@ public class SaimFit implements PlugIn, DialogListener {
                try {
                   for (int x = startX_; x < lastX; x++) {
                      for (int y = 0; y < height; y++) {
-                     // only calculate if the pixels intensity is
+                        // only calculate if the pixels intensity is
                         // above the threshold
                         // TODO: calculate average of the stack and use threshold on that
                         if (ip.getProcessor().get(x, y) > threshold_) {
@@ -231,7 +205,7 @@ public class SaimFit implements PlugIn, DialogListener {
                      }
                      nrXProcessed_.getAndIncrement();
                      synchronized (nrXProcessed_) {
-                        nrXProcessed_.notify();
+                        ij.IJ.showProgress(nrXProcessed_.get(), width);
                      }
                   }
                } catch (InvalidInputException ex) {
@@ -256,45 +230,37 @@ public class SaimFit implements PlugIn, DialogListener {
                   RunFit rf = new RunFit(0 + (i * nrXPerThread), nrXPerThread);
                   fitThreads[i] = new Thread(rf);
                   fitThreads[i].start();
-               }
-               UserFeedback uf = new UserFeedback();
-               Thread ufThread = new Thread(uf);
-               ufThread.start();
-               
+               } 
                
                // wait for the threads to end 
                // TODO: have a way to kill the threads
                // TODO: have a timeout
-               for (int i = 0; i < nrThreads; i++) {
-                  try {
-                     fitThreads[i].join();
-                  } catch (InterruptedException ex) {
-                     ij.IJ.log("fitThread was interupted");
-                  }
-               }
-               uf.stop();
                try {
-                  ufThread.join();
+                  for (int i = 0; i < nrThreads; i++) {
+                     fitThreads[i].join();
+                  }
+
+                  newStack.setProcessor(ipA, 1);
+                  newStack.setProcessor(ipB, 2);
+                  newStack.setProcessor(iph, 3);
+                  newStack.setProcessor(ipError, 4);
+
+                  ImagePlus rIp = new ImagePlus("Fit result", newStack);
+                  rIp.show();
+                  ij.IJ.showProgress(1);
+                  ij.IJ.showStatus("");
+                  isRunning_.set(false);
+                  ij.IJ.log("Analysis took "
+                          + (System.nanoTime() - startTime) / 1000000 + "ms");
                } catch (InterruptedException ex) {
                   ij.IJ.log("fitThread was interupted");
                }
-
-               newStack.setProcessor(ipA, 1);
-               newStack.setProcessor(ipB, 2);
-               newStack.setProcessor(iph, 3);
-               newStack.setProcessor(ipError, 4);
-
-               ImagePlus rIp = new ImagePlus("Fit result", newStack);
-               rIp.show();
-               ij.IJ.showProgress(1);
-               ij.IJ.showStatus("");
-               isRunning_.set(false);
-               ij.IJ.log("Analysis took " + 
-                       (System.nanoTime() - startTime) / 1000000 + "ms");
             }
          }
          
-         (new Thread(new DoWork())).start();
+         DoWork workThread = new DoWork();
+
+         (new Thread(workThread)).start();
 
       }
 
@@ -306,4 +272,5 @@ public class SaimFit implements PlugIn, DialogListener {
       String s = df.format(d);
       return s;
    }
+   
 }
