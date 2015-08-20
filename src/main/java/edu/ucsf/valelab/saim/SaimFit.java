@@ -21,15 +21,12 @@
 package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.data.SaimData;
-import ij.ImagePlus;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.gui.NonBlockingGenericDialog;
 import ij.plugin.PlugIn;
-import ij.process.ShortProcessor;
 import java.awt.AWTEvent;
 import java.awt.Frame;
-import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
