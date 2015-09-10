@@ -25,6 +25,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
+import ij.gui.GenericDialog;
 import ij.process.FloatProcessor;
 import ij.process.ShortProcessor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,8 +45,18 @@ public class OverseeTheFit extends Thread {
    private final AtomicBoolean isRunning_;
    private final RunTheFit[] fitThreads_;
    private final int nrThreads_;
+   private final GenericDialog gd_;
 
-   public OverseeTheFit(SaimData sd, AtomicBoolean isRunning) {
+   /**
+    * 
+    * @param gd ImageJ GenericDialog, used to switch off the "Fit" checkbox
+    * at the end of a run
+    * @param sd Data structure with user-provided settings
+    * @param isRunning Flag to signal to other threads whether or not to fit is 
+    * currently running
+    */
+   public OverseeTheFit(GenericDialog gd, SaimData sd, AtomicBoolean isRunning) {
+      gd_ = gd;
       sd_ = sd;
       isRunning_ = isRunning;
       nrThreads_ = ij.Prefs.getThreads();
@@ -106,6 +117,7 @@ public class OverseeTheFit extends Thread {
          ij.IJ.showProgress(1);
          ij.IJ.showStatus("");
          isRunning_.set(false);
+         gd_.getPreviewCheckbox().setState(false);
          ij.IJ.log("Analysis took "
                  + (System.nanoTime() - startTime) / 1000000 + "ms");
       } catch (InterruptedException ex) {
@@ -144,6 +156,7 @@ public class OverseeTheFit extends Thread {
       }   
       
       // signal that the coast is clear
+      gd_.getPreviewCheckbox().setState(false);
       isRunning_.set(false);
    }
    

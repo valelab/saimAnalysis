@@ -31,7 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Plugin that fits all pixels of a stack using the Saim equation
- * Three images are produced, representing A, B, and h (height)
+ * Output is a stack with 4 images are produced, representing height, R-squared, 
+ * A, B 
  * 
  * @author nico
  */
@@ -110,7 +111,7 @@ public class SaimFit implements PlugIn, DialogListener {
          
          isRunning_.set(true);
 
-         oft_ = new OverseeTheFit(sd_, isRunning_);
+         oft_ = new OverseeTheFit(gd, sd_, isRunning_);
          
          oft_.start();
       }

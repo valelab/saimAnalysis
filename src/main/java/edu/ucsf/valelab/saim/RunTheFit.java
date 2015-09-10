@@ -34,7 +34,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.math3.exception.TooManyIterationsException;
 
 /**
- *
+ * This class does the actual work of fitting each pixel in the data set
+ * to the SAIM equation.  Only pixels with intensity higher than a user-given
+ * threshold will be fitted.  Pixels that were not fit will be set to 0, pixels
+ * that failed to fit will be set to NaN (not a number)
+ * 
+ * The run method creates an image Stack with 4 images that will be populated 
+ * as follows:
+ * 1: Height in nm
+ * 2: R-squared (estimate of the error between fit and experimental data)
+ * 3: A
+ * 4: B
+ * For A and B, see the Paszek et al. 2012 paper or the equation elsewhere 
+ * in this code
+ * 
  * @author nico
  */
 public class RunTheFit extends Thread {
@@ -59,7 +72,7 @@ public class RunTheFit extends Thread {
 
    @Override
    public void run() {
-      // prepopulate a arrays with angles in radians and in degrees
+      // prepopulate arrays with angles in radians and in degrees
       final double[] anglesRadians = new double[ip_.getNSlices()];
       final double[] anglesDegrees = new double[ip_.getNSlices()];
       for (int i = 0; i < anglesRadians.length; i++) {
@@ -103,18 +116,20 @@ public class RunTheFit extends Thread {
                   try {
                      double[] result = sff.fit(
                              observed.getWeightedObservedPoints());
-                     fpOut_[0].setf(x, y, (float) result[0]);
-                     fpOut_[1].setf(x, y, (float) result[1]);
-                     fpOut_[2].setf(x, y, (float) result[2]);
+                     fpOut_[2].setf(x, y, (float) result[0]);
+                     fpOut_[3].setf(x, y, (float) result[1]);
+                     fpOut_[0].setf(x, y, (float) result[2]);
                      calculated.clear();
                      SaimUtils.predictValues(observed, calculated, result, sf);
                      try {
                         double r2 = SaimUtils.getRSquared(observed, calculated);
-                        fpOut_[3].setf(x, y, (float) r2);
+                        fpOut_[1].setf(x, y, (float) r2);
                      } catch (InvalidInputException ex) {
                         ij.IJ.log("Observed and Calculated datasets differe in size");
                      }
                   } catch (TooManyIterationsException tiex) {
+                     for (int i = 0; i < 4; i++) 
+                        fpOut_[i].setf(x, y, Float.NaN);
                      ij.IJ.log("Failed to fit pixel " + x + ", " + y);
                   }
                }
