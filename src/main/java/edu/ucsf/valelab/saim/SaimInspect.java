@@ -89,8 +89,8 @@ public class SaimInspect implements PlugIn, DialogListener {
          sd_.wavelength_ = gd.getNextNumber();
          sd_.nSample_ = gd.getNextNumber();
          sd_.dOx_ = gd.getNextNumber();
-         sd_.firstAngle_ = (int) gd.getNextNumber();
-         sd_.angleStep_ = (int) gd.getNextNumber();
+         sd_.firstAngle_ = gd.getNextNumber();
+         sd_.angleStep_ = gd.getNextNumber();
          sd_.A_ = gd.getNextNumber();
          sd_.B_ = gd.getNextNumber();
          sd_.h_ = gd.getNextNumber();
@@ -159,6 +159,7 @@ public class SaimInspect implements PlugIn, DialogListener {
                     "Normalized Intensity", showShapes,
                     "A: " + fmt(result[0], 0) + ", B:" + fmt(result[1], 0)
                     + ", h: " + fmt(result[2], 1) + ", r2: " + fmt(rsq, 2));
+            gd.getPreviewCheckbox().setState(false);
 
          } catch (InvalidInputException ex) {
             ij.IJ.error("Saim Inspect", ex.getMessage());

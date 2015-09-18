@@ -94,8 +94,8 @@ public class SaimFit implements PlugIn, DialogListener {
          sd_.wavelength_ = gd.getNextNumber();
          sd_.nSample_ = gd.getNextNumber();
          sd_.dOx_ = gd.getNextNumber();
-         sd_.firstAngle_ = (int) gd.getNextNumber();
-         sd_.angleStep_ = (int) gd.getNextNumber();
+         sd_.firstAngle_ = gd.getNextNumber();
+         sd_.angleStep_ = gd.getNextNumber();
          sd_.mirrorAround0_ = gd.getNextBoolean();
          sd_.zeroDoubled_ = gd.getNextBoolean();
          sd_.A_ = gd.getNextNumber();
