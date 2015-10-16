@@ -50,12 +50,16 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.addNumericField("Wavelenght (nm)", sd_.wavelength_, 1);
       gd.addNumericField("Sample Refractive Index", sd_.nSample_, 2);
       gd.addNumericField("Thickness of oxide layer (nm)", sd_.dOx_, 1);
-      gd.setInsets(15,0,3);
+      gd.setInsets(15, 0, 3);
       gd.addMessage("Angles:");
       gd.addNumericField("First angle", sd_.firstAngle_, 0);
       gd.addNumericField("Step size", sd_.angleStep_, 0);
       gd.addCheckbox("Mirror around 0", sd_.mirrorAround0_);
       gd.addCheckbox("0 angle is doubled", sd_.zeroDoubled_);
+      gd.setInsets(15, 0, 3);
+      gd.addMessage("Corrections:");
+      gd.addStringField("Flatfield file:", sd_.flatFieldFile_, 10);
+      gd.addStringField("Background file:", sd_.backgroundFile_, 10);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
@@ -98,6 +102,8 @@ public class SaimFit implements PlugIn, DialogListener {
          sd_.angleStep_ = gd.getNextNumber();
          sd_.mirrorAround0_ = gd.getNextBoolean();
          sd_.zeroDoubled_ = gd.getNextBoolean();
+         sd_.flatFieldFile_ = gd.getNextString();
+         sd_.backgroundFile_ = gd.getNextString();
          sd_.A_ = gd.getNextNumber();
          sd_.B_ = gd.getNextNumber();
          sd_.h_ = gd.getNextNumber();
