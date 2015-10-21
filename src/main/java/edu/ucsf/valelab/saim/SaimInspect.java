@@ -26,6 +26,7 @@ import edu.ucsf.valelab.saim.calculations.SaimUtils;
 import edu.ucsf.valelab.saim.data.IntensityData;
 import edu.ucsf.valelab.saim.data.SaimData;
 import edu.ucsf.valelab.saim.exceptions.InvalidInputException;
+import edu.ucsf.valelab.saim.guihelpers.GuiHelpers;
 import edu.ucsf.valelab.saim.plot.PlotUtils;
 import ij.ImagePlus;
 import ij.gui.DialogListener;
@@ -37,7 +38,9 @@ import ij.plugin.PlugIn;
 import ij.plugin.filter.Analyzer;
 import java.awt.AWTEvent;
 import java.awt.Frame;
+import java.awt.TextField;
 import java.text.DecimalFormat;
+import java.util.Vector;
 import java.util.prefs.Preferences;
 import org.jfree.data.xy.XYSeries;
 
@@ -68,8 +71,8 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.addCheckbox("0 angle is doubled", sd_.zeroDoubled_);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Corrections:");
-      gd.addStringField("Flatfield file:", sd_.flatFieldFile_, 10);
-      gd.addStringField("Background file:", sd_.backgroundFile_, 10);
+      gd.addStringField("Flatfield file:", sd_.flatFieldFile_, 12);
+      gd.addStringField("Background file:", sd_.backgroundFile_, 12);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
@@ -83,6 +86,11 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.setOKLabel("Close");
 
       gd.addDialogListener(this);
+      
+      // enable drag and drop for the flatfield and background files
+      Vector<TextField> textFields = gd.getStringFields();
+      GuiHelpers.makeTextFieldDropTarget(textFields.get(0));
+      GuiHelpers.makeTextFieldDropTarget(textFields.get(1));
 
       gd.showDialog();
    }

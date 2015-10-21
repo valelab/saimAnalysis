@@ -21,12 +21,15 @@
 package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.data.SaimData;
+import edu.ucsf.valelab.saim.guihelpers.GuiHelpers;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.gui.NonBlockingGenericDialog;
 import ij.plugin.PlugIn;
 import java.awt.AWTEvent;
 import java.awt.Frame;
+import java.awt.TextField;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -49,7 +52,7 @@ public class SaimFit implements PlugIn, DialogListener {
       
       gd.addNumericField("Wavelenght (nm)", sd_.wavelength_, 1);
       gd.addNumericField("Sample Refractive Index", sd_.nSample_, 2);
-      gd.addNumericField("Thickness of oxide layer (nm)", sd_.dOx_, 1);
+      gd.addNumericField("Oxide layer (nm)", sd_.dOx_, 1);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Angles:");
       gd.addNumericField("First angle", sd_.firstAngle_, 0);
@@ -58,15 +61,15 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.addCheckbox("0 angle is doubled", sd_.zeroDoubled_);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Corrections:");
-      gd.addStringField("Flatfield file:", sd_.flatFieldFile_, 10);
-      gd.addStringField("Background file:", sd_.backgroundFile_, 10);
+      gd.addStringField("Flatfield file:", sd_.flatFieldFile_, 12);
+      gd.addStringField("Background file:", sd_.backgroundFile_, 12);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
       gd.addNumericField("B", sd_.B_, 0);
       gd.addNumericField("Height (nm)", sd_.h_, 0);
       gd.setInsets(15, 0, 3);
-      gd.addMessage("Only fit pixels higher then");
+      gd.addMessage("Only fit pixels > ");
       gd.addNumericField("Threshold", sd_.threshold_, 0);
       gd.setInsets(15, 0, 3);
       
@@ -77,6 +80,10 @@ public class SaimFit implements PlugIn, DialogListener {
       
       gd.addDialogListener(this);
       
+      // enable drag and drop for the flatfield and background files
+      Vector<TextField> textFields = gd.getStringFields();
+      GuiHelpers.makeTextFieldDropTarget(textFields.get(0));
+      GuiHelpers.makeTextFieldDropTarget(textFields.get(1));
           
       gd.showDialog();
    }
