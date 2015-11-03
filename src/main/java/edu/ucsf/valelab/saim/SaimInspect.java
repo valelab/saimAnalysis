@@ -36,6 +36,7 @@ import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.plugin.filter.Analyzer;
+import ij.process.ImageProcessor;
 import java.awt.AWTEvent;
 import java.awt.Frame;
 import java.awt.TextField;
@@ -55,6 +56,10 @@ public class SaimInspect implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
 
    private Frame plotFrame_;
+   private ImagePlus flatField_;
+   private ImagePlus background_;
+   private String lastFlatFieldFile_;
+   private String lastBackgroundFile_;
 
    @Override
    public void run(String arg) {
@@ -123,7 +128,51 @@ public class SaimInspect implements PlugIn, DialogListener {
             az.measure();
          }
          float[] values = rt.getColumn(rt.getColumnIndex("Mean"));
-
+         
+         // check if a flatfield file was given.  If so, read it in from disk.
+         // Subtract background if it was given.
+         // Cache this file since it will be expensive to re-create
+         if (!sd_.flatFieldFile_.equals(lastFlatFieldFile_)
+                 || !sd_.backgroundFile_.equals(lastBackgroundFile_)) {
+            if (!sd_.flatFieldFile_.equals("")) {
+               flatField_ = ij.IJ.openImage(sd_.flatFieldFile_);
+            } else {
+               flatField_ = null;
+            }
+            if (!sd_.backgroundFile_.equals("") && flatField_ != null) {
+               background_ = ij.IJ.openImage(sd_.backgroundFile_);
+               // subtract background here
+               if (background_ != null && background_.getProcessor() != null && 
+                       sameSize(flatField_, background_) ) {
+                  ImageProcessor ffp = flatField_.getProcessor();
+                  for (int i = 0; i < ffp.getPixelCount(); i++) {
+                     ffp.setf(i, ffp.getf(i) - background_.getProcessor().getf(i));
+                  }
+               }
+            }
+            lastFlatFieldFile_ = sd_.flatFieldFile_;
+            lastBackgroundFile_ = sd_.backgroundFile_;
+         }
+         float[] backgroundValues = null;
+         if (background_ != null) {
+            backgroundValues = measure( background_, roi);
+         }
+         float[] flatFieldValues = null;
+         if (flatField_ != null) {
+            flatFieldValues = measure( flatField_, roi);
+         }
+         float background = 0.0f;
+         if (backgroundValues != null) {
+            background = backgroundValues[0];
+         }
+         if ( flatFieldValues != null && 
+                 flatFieldValues.length == values.length) {
+            for (int i = 0; i < values.length; i++) {
+               values[i] = (values[i] - background) / flatFieldValues[i];
+            }            
+         }
+         
+         
          XYSeries[] plots = new XYSeries[2];
          boolean[] showShapes = new boolean[2]; // leave false
 
@@ -195,4 +244,21 @@ public class SaimInspect implements PlugIn, DialogListener {
       return s;
    }
    
+   public static boolean sameSize (final ImagePlus imgOne, final ImagePlus imgTwo) {
+      return !(
+              imgOne.getHeight() != imgTwo.getHeight() ||
+              imgOne.getWidth() != imgTwo.getWidth() ||
+              imgOne.getBytesPerPixel() != imgTwo.getBytesPerPixel() );
+   }
+
+   public static float[] measure(final ImagePlus ip, final Roi roi) {
+      ip.setRoi(roi);
+      ResultsTable rt = new ResultsTable();
+      Analyzer az = new Analyzer(ip, Analyzer.MEAN, rt);
+      for (int i = 1; i <= ip.getNSlices(); i++) {
+         ip.setPosition(i);
+         az.measure();
+      }
+      return rt.getColumn(rt.getColumnIndex("Mean"));
+   }
 }
