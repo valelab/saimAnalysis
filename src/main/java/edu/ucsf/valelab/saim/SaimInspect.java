@@ -26,7 +26,6 @@ import edu.ucsf.valelab.saim.calculations.SaimUtils;
 import edu.ucsf.valelab.saim.data.IntensityData;
 import edu.ucsf.valelab.saim.data.SaimData;
 import edu.ucsf.valelab.saim.exceptions.InvalidInputException;
-import edu.ucsf.valelab.saim.guihelpers.GuiHelpers;
 import edu.ucsf.valelab.saim.plot.PlotUtils;
 import ij.ImagePlus;
 import ij.gui.DialogListener;
@@ -36,12 +35,9 @@ import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.plugin.filter.Analyzer;
-import ij.process.ImageProcessor;
 import java.awt.AWTEvent;
 import java.awt.Frame;
-import java.awt.TextField;
 import java.text.DecimalFormat;
-import java.util.Vector;
 import java.util.prefs.Preferences;
 import org.jfree.data.xy.XYSeries;
 
@@ -56,10 +52,7 @@ public class SaimInspect implements PlugIn, DialogListener {
    private final SaimData sd_ = new SaimData();
 
    private Frame plotFrame_;
-   private ImagePlus flatField_;
-   private ImagePlus background_;
-   private String lastFlatFieldFile_;
-   private String lastBackgroundFile_;
+
 
    @Override
    public void run(String arg) {
@@ -75,10 +68,6 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.addCheckbox("Mirror around 0", sd_.mirrorAround0_);
       gd.addCheckbox("0 angle is doubled", sd_.zeroDoubled_);
       gd.setInsets(15, 0, 3);
-      gd.addMessage("Corrections:");
-      gd.addStringField("Flatfield file:", sd_.flatFieldFile_, 12);
-      gd.addStringField("Background file:", sd_.backgroundFile_, 12);
-      gd.setInsets(15, 0, 3);
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
       gd.addNumericField("B", sd_.B_, 0);
@@ -91,11 +80,6 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.setOKLabel("Close");
 
       gd.addDialogListener(this);
-      
-      // enable drag and drop for the flatfield and background files
-      Vector<TextField> textFields = gd.getStringFields();
-      GuiHelpers.makeTextFieldDropTarget(textFields.get(0));
-      GuiHelpers.makeTextFieldDropTarget(textFields.get(1));
 
       gd.showDialog();
    }
@@ -113,8 +97,6 @@ public class SaimInspect implements PlugIn, DialogListener {
          sd_.h_ = gd.getNextNumber();
          sd_.mirrorAround0_ = gd.getNextBoolean();
          sd_.zeroDoubled_ = gd.getNextBoolean();
-         sd_.flatFieldFile_ = gd.getNextString();
-         sd_.backgroundFile_ = gd.getNextString();
 
          ImagePlus ip = ij.IJ.getImage();
          Roi roi = ip.getRoi();
@@ -127,50 +109,7 @@ public class SaimInspect implements PlugIn, DialogListener {
             ip.setPosition(i);
             az.measure();
          }
-         float[] values = rt.getColumn(rt.getColumnIndex("Mean"));
-         
-         // check if a flatfield file was given.  If so, read it in from disk.
-         // Subtract background if it was given.
-         // Cache this file since it will be expensive to re-create
-         if (!sd_.flatFieldFile_.equals(lastFlatFieldFile_)
-                 || !sd_.backgroundFile_.equals(lastBackgroundFile_)) {
-            if (!sd_.flatFieldFile_.equals("")) {
-               flatField_ = ij.IJ.openImage(sd_.flatFieldFile_);
-            } else {
-               flatField_ = null;
-            }
-            if (!sd_.backgroundFile_.equals("") && flatField_ != null) {
-               background_ = ij.IJ.openImage(sd_.backgroundFile_);
-               // subtract background here
-               if (background_ != null && background_.getProcessor() != null && 
-                       sameSize(flatField_, background_) ) {
-                  ImageProcessor ffp = flatField_.getProcessor();
-                  for (int i = 0; i < ffp.getPixelCount(); i++) {
-                     ffp.setf(i, ffp.getf(i) - background_.getProcessor().getf(i));
-                  }
-               }
-            }
-            lastFlatFieldFile_ = sd_.flatFieldFile_;
-            lastBackgroundFile_ = sd_.backgroundFile_;
-         }
-         float[] backgroundValues = null;
-         if (background_ != null) {
-            backgroundValues = measure( background_, roi);
-         }
-         float[] flatFieldValues = null;
-         if (flatField_ != null) {
-            flatFieldValues = measure( flatField_, roi);
-         }
-         float background = 0.0f;
-         if (backgroundValues != null) {
-            background = backgroundValues[0];
-         }
-         if ( flatFieldValues != null && 
-                 flatFieldValues.length == values.length) {
-            for (int i = 0; i < values.length; i++) {
-               values[i] = (values[i] - background) / flatFieldValues[i];
-            }            
-         }
+         float[] values = rt.getColumn(rt.getColumnIndex("Mean"));         
          
          
          XYSeries[] plots = new XYSeries[2];

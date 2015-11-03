@@ -60,10 +60,6 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.addCheckbox("Mirror around 0", sd_.mirrorAround0_);
       gd.addCheckbox("0 angle is doubled", sd_.zeroDoubled_);
       gd.setInsets(15, 0, 3);
-      gd.addMessage("Corrections:");
-      gd.addStringField("Flatfield file:", sd_.flatFieldFile_, 12);
-      gd.addStringField("Background file:", sd_.backgroundFile_, 12);
-      gd.setInsets(15, 0, 3);
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
       gd.addNumericField("B", sd_.B_, 0);
@@ -79,11 +75,6 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.setOKLabel("Close");
       
       gd.addDialogListener(this);
-      
-      // enable drag and drop for the flatfield and background files
-      Vector<TextField> textFields = gd.getStringFields();
-      GuiHelpers.makeTextFieldDropTarget(textFields.get(0));
-      GuiHelpers.makeTextFieldDropTarget(textFields.get(1));
           
       gd.showDialog();
    }
@@ -109,8 +100,6 @@ public class SaimFit implements PlugIn, DialogListener {
          sd_.angleStep_ = gd.getNextNumber();
          sd_.mirrorAround0_ = gd.getNextBoolean();
          sd_.zeroDoubled_ = gd.getNextBoolean();
-         sd_.flatFieldFile_ = gd.getNextString();
-         sd_.backgroundFile_ = gd.getNextString();
          sd_.A_ = gd.getNextNumber();
          sd_.B_ = gd.getNextNumber();
          sd_.h_ = gd.getNextNumber();
