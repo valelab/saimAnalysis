@@ -77,6 +77,7 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.addPreviewCheckbox(null, "Inspect");
 
       gd.hideCancelButton();
+      gd.addHelp("http://fiji.sc/Saim");
       gd.setOKLabel("Close");
 
       gd.addDialogListener(this);

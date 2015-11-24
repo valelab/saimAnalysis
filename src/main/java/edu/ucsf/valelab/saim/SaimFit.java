@@ -69,6 +69,7 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.addPreviewCheckbox(null, "Fit");
 
       gd.hideCancelButton();
+      gd.addHelp("http://fiji.sc/Saim");
       gd.setOKLabel("Close");
       
       gd.addDialogListener(this);

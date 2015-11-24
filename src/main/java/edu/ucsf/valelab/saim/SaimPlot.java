@@ -110,6 +110,7 @@ public class SaimPlot implements PlugIn, DialogListener
       gd.addPreviewCheckbox(null, "Plot");
 
       gd.hideCancelButton();
+      gd.addHelp("http://fiji.sc/Saim");
       gd.setOKLabel("Close");
       
       gd.addDialogListener(this);
