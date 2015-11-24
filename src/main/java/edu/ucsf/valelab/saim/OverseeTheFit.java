@@ -113,6 +113,8 @@ public class OverseeTheFit extends Thread {
          }
 
          ImagePlus rIp = new ImagePlus("Fit result", newStack);
+         WindowManager.setTempCurrentImage(rIp);
+         IJ.run("Fire"); 
          rIp.show();
          ij.IJ.showProgress(1);
          ij.IJ.showStatus("");

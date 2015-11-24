@@ -21,15 +21,12 @@
 package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.data.SaimData;
-import edu.ucsf.valelab.saim.guihelpers.GuiHelpers;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.gui.NonBlockingGenericDialog;
 import ij.plugin.PlugIn;
 import java.awt.AWTEvent;
 import java.awt.Frame;
-import java.awt.TextField;
-import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
