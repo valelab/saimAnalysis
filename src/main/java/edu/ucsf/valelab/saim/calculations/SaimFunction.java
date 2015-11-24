@@ -191,8 +191,8 @@ public class SaimFunction implements UnivariateFunction,
       // where f = phaseDiffFactor
       // c = rTE.Real(), and d = rTE.Imaginary()
 
-      double pdh =  - 2 * A * c * f * Math.sin(phaseDiff) -  
-              2 * A * d * f * Math.cos(phaseDiff);
+      double pdh =  - 2 * A *  f *  ( c * Math.sin(phaseDiff) +  
+               d  * Math.cos(phaseDiff) );
       
       double result[] = {val, 1.0, pdh};
       return result;
