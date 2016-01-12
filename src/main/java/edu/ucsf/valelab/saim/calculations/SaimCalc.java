@@ -67,6 +67,12 @@ public class SaimCalc {
     * Scanning angle interference microscopy reveals cell dynamics at the nanoscale. 
     * Nat Meth. 9:825–827. doi:10.1038/nmeth.2077.
     * 
+    * 
+    * 1/11/2016: Note that the above manuscript contains a mistake that is corrected
+    * in a later publication: http://dx.doi.org/10.1016/B978-0-12-420138-5.00013-6
+    * That correction is now applied.
+    * 
+    * 
     * @param wavelength of the excitation light source in nm
     * @param angle with respect to the normal in radiance
     * @param dOx Thickness of the Silicon Oxide layer in nm
@@ -101,7 +107,9 @@ public class SaimCalc {
       double m22TE = cosOfkOxdOxCosOx;
       
       Complex tmp1 = ( (m12TE.multiply(p0)).add(m11TE) ).multiply(p2);
-      Complex tmp2 = tmp1.add( m21TE.subtract(m22TE * p0) );
+      // this is the only line changed due to the error in the NM paper
+      Complex tmp2 = tmp1.subtract( m21TE.add(m22TE * p0) );
+      //Complex tmp2 = tmp1.add( m21TE.subtract(m22TE * p0) );
       Complex tmp3 = tmp1.add( m21TE.add(m22TE * p0) );
       Complex rTE = tmp2.divide(tmp3);
       

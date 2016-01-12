@@ -94,8 +94,8 @@ public class SaimPlot implements PlugIn, DialogListener
    @Override
    public void run(String arg) {
 
-      final NonBlockingGenericDialog gd = new NonBlockingGenericDialog( "Saim Plot" );
-      
+      final NonBlockingGenericDialog gd = new NonBlockingGenericDialog( 
+              "Saim Plot  " + Version.VERSION );      
       
       gd.addNumericField("Wavelenght (nm)", wavelength_, 1);
       gd.addNumericField("Sample Refractive Index", nSample_, 2);

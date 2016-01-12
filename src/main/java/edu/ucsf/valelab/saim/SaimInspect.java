@@ -56,7 +56,8 @@ public class SaimInspect implements PlugIn, DialogListener {
 
    @Override
    public void run(String arg) {
-      final NonBlockingGenericDialog gd = new NonBlockingGenericDialog("Saim Inspect");
+      final NonBlockingGenericDialog gd = new NonBlockingGenericDialog(
+              "Saim Inspect " + Version.VERSION);
 
       gd.addNumericField("Wavelenght (nm)", sd_.wavelength_, 1);
       gd.addNumericField("Sample Refr. Index", sd_.nSample_, 2);

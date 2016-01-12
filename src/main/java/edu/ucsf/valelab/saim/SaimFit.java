@@ -45,7 +45,8 @@ public class SaimFit implements PlugIn, DialogListener {
    
    @Override
    public void run(String arg) {
-      final NonBlockingGenericDialog gd = new NonBlockingGenericDialog( "Saim Fit" );
+      final NonBlockingGenericDialog gd = new NonBlockingGenericDialog( 
+              "Saim Fit " + Version.VERSION);
       
       gd.addNumericField("Wavelenght (nm)", sd_.wavelength_, 1);
       gd.addNumericField("Sample Refractive Index", sd_.nSample_, 2);
