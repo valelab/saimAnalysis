@@ -128,7 +128,7 @@ public class SaimPlot implements PlugIn, DialogListener
         gd.addNumericField("Last angle", lastAngle_, 0);
         gd.setInsets(15, 0, 3);
         gd.addMessage("Heights as comma separated values:");
-        gd.addStringField("Height in nm", heightString_);
+        gd.addStringField("Heights in nm", heightString_);
         gd.addCheckbox("Output values", listValues_);
         gd.addPreviewCheckbox(null, "Plot");
 

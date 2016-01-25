@@ -30,8 +30,9 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
  */
 public class SaimFunctionWithBounds extends SaimFunction {
    
-   public SaimFunctionWithBounds( double wavelength, double dOx, double nSample ) {
-      super(wavelength, dOx, nSample);
+   public SaimFunctionWithBounds( double wavelength, double dOx, double nSample, 
+           boolean useBAngle ) {
+      super(wavelength, dOx, nSample, useBAngle);
    }
    
    public SaimFunctionWithBounds( SaimData sd ) {

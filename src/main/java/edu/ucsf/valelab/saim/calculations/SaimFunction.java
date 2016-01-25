@@ -45,12 +45,15 @@ public class SaimFunction implements UnivariateFunction,
     * @param wavelength - excitation wavelength in nm
     * @param dOx - thickness of the oxide layer in nm
     * @param nSample  - refractive index of the sample (likely 1.36 or so)
+    * @param useBAngle - use B or B * Angle in function
     */
-   public SaimFunction( double wavelength, double dOx, double nSample ) {
+   public SaimFunction( double wavelength, double dOx, double nSample, 
+           boolean useBAngle ) {
       sd_ = new SaimData();
       sd_.wavelength_ = wavelength;
       sd_.dOx_ = dOx;
       sd_.nSample_ = nSample;
+      sd_.useBAngle_ = useBAngle;
       fresnelTE_ = new HashMap<Double, Complex>(100);
    }
 
@@ -65,7 +68,7 @@ public class SaimFunction implements UnivariateFunction,
     */
    public SaimFunction( double wavelength, double dOx, double nSample, 
            double angle ) {
-      this(wavelength, dOx, nSample);
+      this(wavelength, dOx, nSample, false);
       angle_ = Math.toRadians(angle);
    }
    
@@ -131,7 +134,10 @@ public class SaimFunction implements UnivariateFunction,
        *         fieldStrength.getImaginary() * fieldStrength.getImaginary() ;
        */
       
-      return sd_.A_ * val + sd_.B_;
+      if (!sd_.useBAngle_)
+         return sd_.A_ * val + sd_.B_;
+      
+      return sd_.A_ * val + sd_.B_ * angle_;
    }
 
 
@@ -184,7 +190,10 @@ public class SaimFunction implements UnivariateFunction,
       double val = 1 + 2 * c * Math.cos(phaseDiff) - 
              2 * d * Math.sin(phaseDiff) + c * c + d * d;
 
-      // partial derivative for B is 1
+      // partial derivative for B is 1 or angle
+      double bDerivative = 1.0;
+      if (sd_.useBAngle_)
+         bDerivative = angle_;
       
       // partial derivate for h is 
       //     - 2*A*c*f*sin(fh) - 2*A*d*f*cos(fh)
@@ -194,7 +203,7 @@ public class SaimFunction implements UnivariateFunction,
       double pdh =  - 2 * A *  f *  ( c * Math.sin(phaseDiff) +  
                d  * Math.cos(phaseDiff) );
       
-      double result[] = {val, 1.0, pdh};
+      double result[] = {val, bDerivative, pdh};
       return result;
    }
    

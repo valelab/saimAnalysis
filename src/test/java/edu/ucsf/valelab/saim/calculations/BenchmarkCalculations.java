@@ -52,7 +52,7 @@ public class BenchmarkCalculations extends TestCase{
       double h = 16.0;
       
       double angle = Math.toRadians(0.0);
-      SaimFunction sf = new SaimFunction(wavelength, dOx, nSample);
+      SaimFunction sf = new SaimFunction(wavelength, dOx, nSample, false);
       Complex rTE = sf.getFresnelTE(0);
       double f = 4.0 * Math.PI * nSample * Math.cos(angle) / wavelength;
       double phaseDiff = f * h;

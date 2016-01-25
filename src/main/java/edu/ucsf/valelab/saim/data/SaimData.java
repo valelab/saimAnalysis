@@ -37,6 +37,7 @@ public class SaimData {
    public int threshold_ = 5000;
    public boolean mirrorAround0_ = false;
    public boolean zeroDoubled_ = false;
+   public boolean useBAngle_ = false;
    public String flatFieldFile_ = "";
    public String backgroundFile_ = "";
    

@@ -69,6 +69,7 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.addCheckbox("Mirror around 0", sd_.mirrorAround0_);
       gd.addCheckbox("0 angle is doubled", sd_.zeroDoubled_);
       gd.setInsets(15, 0, 3);
+      gd.addCheckbox("Use B * angle", sd_.useBAngle_);
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
       gd.addNumericField("B", sd_.B_, 0);
@@ -94,11 +95,12 @@ public class SaimInspect implements PlugIn, DialogListener {
          sd_.dOx_ = gd.getNextNumber();
          sd_.firstAngle_ = gd.getNextNumber();
          sd_.angleStep_ = gd.getNextNumber();
+         sd_.mirrorAround0_ = gd.getNextBoolean();
+         sd_.zeroDoubled_ = gd.getNextBoolean();
+         sd_.useBAngle_ = gd.getNextBoolean();
          sd_.A_ = gd.getNextNumber();
          sd_.B_ = gd.getNextNumber();
          sd_.h_ = gd.getNextNumber();
-         sd_.mirrorAround0_ = gd.getNextBoolean();
-         sd_.zeroDoubled_ = gd.getNextBoolean();
 
          ImagePlus ip = ij.IJ.getImage();
          Roi roi = ip.getRoi();
@@ -134,7 +136,7 @@ public class SaimInspect implements PlugIn, DialogListener {
             
             // create the fitter
             SaimFunctionFitter sff = new SaimFunctionFitter(
-                    sd_.wavelength_, sd_.dOx_, sd_.nSample_);
+                    sd_.wavelength_, sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
             double[] guess = new double[]{sd_.A_, sd_.B_, sd_.h_};
             sff.setGuess(guess);
             final double[] result = sff.fit(observedData.getWeightedObservedPoints());
@@ -143,7 +145,7 @@ public class SaimInspect implements PlugIn, DialogListener {
             // use the fitted data to calculate the predicted values
             IntensityData predictedData = new IntensityData();
             SaimFunction saimFunction = new SaimFunction(sd_.wavelength_, 
-                    sd_.dOx_, sd_.nSample_);
+                    sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
             SaimUtils.predictValues(observedData, predictedData, result, saimFunction);
             
             // plot
