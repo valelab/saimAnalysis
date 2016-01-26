@@ -58,6 +58,7 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.addCheckbox("Mirror around 0", sd_.mirrorAround0_);
       gd.addCheckbox("0 angle is doubled", sd_.zeroDoubled_);
       gd.setInsets(15, 0, 3);
+      gd.addCheckbox("Use B * angle", sd_.useBAngle_);
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
       gd.addNumericField("B", sd_.B_, 0);
@@ -99,6 +100,7 @@ public class SaimFit implements PlugIn, DialogListener {
          sd_.angleStep_ = gd.getNextNumber();
          sd_.mirrorAround0_ = gd.getNextBoolean();
          sd_.zeroDoubled_ = gd.getNextBoolean();
+         sd_.useBAngle_ = gd.getNextBoolean();
          sd_.A_ = gd.getNextNumber();
          sd_.B_ = gd.getNextNumber();
          sd_.h_ = gd.getNextNumber();
