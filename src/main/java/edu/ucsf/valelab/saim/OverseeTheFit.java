@@ -17,6 +17,7 @@
 //               IN NO EVENT SHALL THE COPYRIGHT OWNER OR
 //               CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 //               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
+
 package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.data.SaimData;
@@ -97,7 +98,13 @@ public class OverseeTheFit extends Thread {
         // start all threads
         int nrXPerThread = (width / nrThreads_);
         for (int i = 0; i < nrThreads_; i++) {
-            RunTheFit rf = new RunTheFit(0 + (i * nrXPerThread), nrXPerThread,
+            // Because of rounding, we need to calculate the number of columns 
+            // to be analyzed by this thread specifically for the last thread
+            int doThisManyXs = nrXPerThread;
+            if (i == nrThreads_ -1) {
+               doThisManyXs = width - (nrXPerThread * nrThreads_) + nrXPerThread;
+            }
+            RunTheFit rf = new RunTheFit(0 + (i * nrXPerThread), doThisManyXs,
                     sd_.copy(), ip, outputFP, nrXProcessed_);
             fitThreads_[i] = rf;
             fitThreads_[i].start();

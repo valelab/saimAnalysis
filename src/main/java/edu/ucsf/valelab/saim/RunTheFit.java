@@ -52,14 +52,23 @@ import org.apache.commons.math3.exception.TooManyIterationsException;
  */
 public class RunTheFit extends Thread {
 
-   private final int startX_;
-   private final int numberX_;
-   private final SaimData sd_;
-   private final ImagePlus ip_;
-   private final FloatProcessor[] fpOut_;
+   private final int startX_;   // image x coordinate at which we will start analysis
+   private final int numberX_;  // Number of x coordinates that we will analyze
+   private final SaimData sd_;  // Analysis settings data structure
+   private final ImagePlus ip_; // ImageJ Image data
+   private final FloatProcessor[] fpOut_; // Results as an ImageJ Stack of type Float
    private final AtomicInteger nrXProcessed_;
    private final AtomicBoolean stop_ = new AtomicBoolean(false);
 
+   /**
+    * 
+    * @param startX image x coordinate at which analysis starts
+    * @param numberX Number of x coordinates that  will be analyzes
+    * @param sd Analysis settings data structure
+    * @param ip ImageJ Image data
+    * @param fpOut Results as an ImageJ Stack of type Float
+    * @param nrXProcessed Number of X coordinates that were analyzed
+    */
    public RunTheFit(int startX, int numberX, SaimData sd, ImagePlus ip,
            FloatProcessor[] fpOut, AtomicInteger nrXProcessed) {
       startX_ = startX;
