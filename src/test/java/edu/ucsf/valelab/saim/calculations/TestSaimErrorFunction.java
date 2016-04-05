@@ -44,7 +44,7 @@ public class TestSaimErrorFunction extends TestCase {
       data.dOx_ = 500.0;
       data.A_ = 1000.0;
       data.B_ = 5000.0;
-      data.h_ = 75.0;
+      data.heights_ = new double[] {75.0};
       
       
       double maxError = 0.0000000001;
@@ -55,14 +55,14 @@ public class TestSaimErrorFunction extends TestCase {
        for (int i = -50; i <= 50; i+=1) {
          double angle = Math.toRadians(i);
          double I = data.A_ * SaimCalc.fieldStrength(data.wavelength_, angle, 
-                 data.nSample_, data.dOx_, data.h_) +
+                 data.nSample_, data.dOx_, data.heights_[0]) +
                  data.B_;
          WeightedObservedPoint point = new WeightedObservedPoint(1.0, angle, I);
          points.add(point);
       }
        // calculate the error with these ideal points (shoudle be 0)
       SaimErrorFunction sef = new SaimErrorFunction(data, points);
-      double[] parameters = {data.A_, data.B_, data.h_};
+      double[] parameters = {data.A_, data.B_, data.heights_[0]};
       double error = sef.value(parameters);
       
       System.out.println("SaimError error: " + error);

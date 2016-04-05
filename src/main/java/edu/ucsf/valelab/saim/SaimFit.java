@@ -31,8 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Plugin that fits all pixels of a stack using the Saim equation
- * Output is a stack with 4 images are produced, representing height, R-squared, 
- * A, B 
+ * Output is a stack with 4 images, representing height, R-squared, A, and B. 
  * 
  * @author nico
  */
@@ -62,7 +61,7 @@ public class SaimFit implements PlugIn, DialogListener {
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
       gd.addNumericField("B", sd_.B_, 0);
-      gd.addNumericField("Height (nm)", sd_.h_, 0);
+      gd.addStringField("Heights (nm)", SaimData.toString(sd_.heights_), 15);
       gd.setInsets(15, 0, 3);
       gd.addMessage("Only fit pixels > ");
       gd.addNumericField("Threshold", sd_.threshold_, 0);
@@ -103,20 +102,25 @@ public class SaimFit implements PlugIn, DialogListener {
          sd_.useBAngle_ = gd.getNextBoolean();
          sd_.A_ = gd.getNextNumber();
          sd_.B_ = gd.getNextNumber();
-         sd_.h_ = gd.getNextNumber();
-         
+         try {
+            sd_.heights_ = SaimData.fromString(gd.getNextString());
+         } catch (NumberFormatException nfe) {
+            ij.IJ.error("Heights should look like: \"10.0, 230.5\"");
+            return false;
+         }
          sd_.threshold_ = (int) gd.getNextNumber();
-                 
+
          if (isRunning_.get()) {
             ij.IJ.showMessage("Saim Fit is already running");
             return true;
          }
-         
+
          isRunning_.set(true);
 
          oft_ = new OverseeTheFit(gd, sd_, isRunning_);
-         
+
          oft_.start();
+
       }
 
       return true;

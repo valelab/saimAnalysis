@@ -73,7 +73,7 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
       gd.addNumericField("B", sd_.B_, 0);
-      gd.addNumericField("Height (nm)", sd_.h_, 0);
+      gd.addStringField("Height (nm)", SaimData.toString(sd_.heights_), 15);
       gd.setInsets(15, 0, 3);
 
       gd.addPreviewCheckbox(null, "Inspect");
@@ -100,7 +100,12 @@ public class SaimInspect implements PlugIn, DialogListener {
          sd_.useBAngle_ = gd.getNextBoolean();
          sd_.A_ = gd.getNextNumber();
          sd_.B_ = gd.getNextNumber();
-         sd_.h_ = gd.getNextNumber();
+         try {
+            sd_.heights_ = SaimData.fromString(gd.getNextString());
+         } catch (NumberFormatException nfe) {
+            ij.IJ.error("Heights should look like: \"10.0, 230.5\"");
+            return false;
+         }
 
          ImagePlus ip = ij.IJ.getImage();
          Roi roi = ip.getRoi();
@@ -114,10 +119,6 @@ public class SaimInspect implements PlugIn, DialogListener {
             az.measure();
          }
          float[] values = rt.getColumn(rt.getColumnIndex("Mean"));         
-         
-         
-         XYSeries[] plots = new XYSeries[2];
-         boolean[] showShapes = new boolean[2]; // leave false
 
          // collect the observedData and store in our own data structure
          IntensityData observedData = new IntensityData();
@@ -137,34 +138,53 @@ public class SaimInspect implements PlugIn, DialogListener {
             // create the fitter
             SaimFunctionFitter sff = new SaimFunctionFitter(
                     sd_.wavelength_, sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
-            double[] guess = new double[]{sd_.A_, sd_.B_, sd_.h_};
-            sff.setGuess(guess);
-            final double[] result = sff.fit(observedData.getWeightedObservedPoints());
-            ij.IJ.log("A: " + result[0] + ", B: " + result[1] + ", h: " + result[2]);
-
-            // use the fitted data to calculate the predicted values
-            IntensityData predictedData = new IntensityData();
-            SaimFunction saimFunction = new SaimFunction(sd_.wavelength_, 
-                    sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
-            SaimUtils.predictValues(observedData, predictedData, result, saimFunction);
             
-            // plot
+            final int nrTries = sd_.heights_.length;
+            Double[] rsquareds = new Double[nrTries];
+            IntensityData[] predictedDatas = new IntensityData[nrTries];
+            double[][] results = new double[nrTries][];        
+            XYSeries[] plots = new XYSeries[1 + nrTries];
+            boolean[] showShapes = new boolean[1 + nrTries]; // leave false
+            
+            for (int i = 0; i < nrTries; i++) {
+               double[] guess = new double[]{sd_.A_, sd_.B_, sd_.heights_[i]};
+               sff.setGuess(guess);
+               results[i] = sff.fit(observedData.getWeightedObservedPoints());
+               ij.IJ.log("A: " + results[i][0] + ", B: " + results[i][1] + 
+                       ", h: " + results[i][2]);
+
+               // use the fitted data to calculate the predicted values
+               SaimFunction saimFunction = new SaimFunction(sd_.wavelength_,
+                       sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
+               predictedDatas[i] = new IntensityData();
+               SaimUtils.predictValues(observedData, predictedDatas[i], 
+                       results[i], saimFunction);
+               rsquareds[i] = SaimUtils.getRSquared(observedData, predictedDatas[i]);
+            }
+            int bestIndex = SaimUtils.getIndexOfMaxValue(rsquareds);
+            
+            
+            // plot fits for all heights attempted
             plots[0] = observedData.getXYSeries("Observations");
-            plots[1] = predictedData.getXYSeries("Fit");
+            for (int i = 0; i < nrTries; i++) {
+                plots[i+1] = predictedDatas[i].getXYSeries("Fit - height " + sd_.heights_[i]);
+            }
+           
 
             Preferences prefs = Preferences.userNodeForPackage(this.getClass());
             PlotUtils pu = new PlotUtils(prefs);
             if (plotFrame_ != null) {
                plotFrame_.dispose();
             }
-            double rsq = SaimUtils.getRSquared(observedData, predictedData);
 
             plotFrame_ = pu.plotDataN("Saim at " + sd_.wavelength_ + " nm, n " + sd_.nSample_
                     + ", dOx: " + sd_.dOx_ + " nm", plots,
                     "Angle of incidence (degrees)",
                     "Normalized Intensity", showShapes,
-                    "A: " + fmt(result[0], 0) + ", B:" + fmt(result[1], 0)
-                    + ", h: " + fmt(result[2], 1) + ", r2: " + fmt(rsq, 2));
+                    "A: " + fmt(results[bestIndex][0], 0) + ", B:" + 
+                            fmt(results[bestIndex][1], 0)
+                    + ", h: " + fmt(results[bestIndex][2], 1) + ", r2: " + 
+                            fmt(rsquareds[bestIndex], 2));
             gd.getPreviewCheckbox().setState(false);
 
          } catch (InvalidInputException ex) {

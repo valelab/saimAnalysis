@@ -97,7 +97,7 @@ public class RunTheFit extends Thread {
       final SaimFunctionFitter sff = new SaimFunctionFitter(
               sd_.wavelength_, sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
       final SaimFunction sf = new SaimFunction(sd_);
-      double[] guess = new double[]{sd_.A_, sd_.B_, sd_.h_};
+      double[] guess = new double[]{sd_.A_, sd_.B_, sd_.heights_[0]};
       sff.setGuess(guess);
 
       // now cycle through the x/y pixels and fit each of them

@@ -139,4 +139,26 @@ public class SaimUtils {
       
    }
    
+   /**
+    * Rather simple way to find the index of the max value in an array
+    * If two or more values are the same and the maximum, the index to the first
+    * maximum will be returned
+    * 
+    * @param myArray input array
+    * @return index to the max value
+    */
+   public static int getIndexOfMaxValue (Comparable[] myArray) {
+      int result = 0;
+      Comparable maxVal = myArray[0];
+      
+      for (int i = 0; i < myArray.length; i++) {
+         if (myArray[i].compareTo(maxVal) > 0) {
+            result = i;
+            maxVal = myArray[i];
+         }
+      }
+      
+      return result;
+   }
+   
 }
