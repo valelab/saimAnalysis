@@ -112,15 +112,19 @@ public class RunTheFit extends Thread {
                if (stop_.get()) {
                   return;
                }
-               // only calculate if the pixels intensity is
+
+               float sum = 0.0f;
+               float[] values = new float[ip_.getNSlices()];
+               for (int i = 0; i < ip_.getNSlices(); i++) {
+                  values[i] = is.getProcessor(i + 1).get(x, y);
+                  sum += values[i];
+               }
+               
+               // only calculate if the average pixel intensity is
                // above the threshold
-               // TODO: calculate average of the stack and use threshold on that
-               if (ip_.getProcessor().get(x, y) > sd_.threshold_) {
+               
+               if (ip_.getProcessor().get(x, y) > (sum / (float) values.length)) {               
                   observed.clear();
-                  float[] values = new float[ip_.getNSlices()];
-                  for (int i = 0; i < ip_.getNSlices(); i++) {
-                     values[i] = is.getProcessor(i + 1).get(x, y);
-                  }
                   SaimUtils.organize(observed, sd_, values, anglesDegrees,
                           anglesRadians);
 
