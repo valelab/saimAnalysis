@@ -145,13 +145,13 @@ public class SaimInspect implements PlugIn, DialogListener {
             double[][] results = new double[nrTries][];        
             XYSeries[] plots = new XYSeries[1 + nrTries];
             boolean[] showShapes = new boolean[1 + nrTries]; // leave false
+            ij.IJ.log("New SAIM Inspect run");
+            DecimalFormat df = new DecimalFormat("#.##");
             
             for (int i = 0; i < nrTries; i++) {
                double[] guess = new double[]{sd_.A_, sd_.B_, sd_.heights_[i]};
                sff.setGuess(guess);
                results[i] = sff.fit(observedData.getWeightedObservedPoints());
-               ij.IJ.log("A: " + results[i][0] + ", B: " + results[i][1] + 
-                       ", h: " + results[i][2]);
 
                // use the fitted data to calculate the predicted values
                SaimFunction saimFunction = new SaimFunction(sd_.wavelength_,
@@ -160,6 +160,11 @@ public class SaimInspect implements PlugIn, DialogListener {
                SaimUtils.predictValues(observedData, predictedDatas[i], 
                        results[i], saimFunction);
                rsquareds[i] = SaimUtils.getRSquared(observedData, predictedDatas[i]);
+               ij.IJ.log("Result for height " + sd_.heights_[i] + 
+                       "nm, A: " + df.format(results[i][0]) + 
+                       ", B: " + df.format(results[i][1]) + 
+                       ", h: " + df.format(results[i][2]) + 
+                       ", r2: " + df.format(rsquareds[i]) );
             }
             int bestIndex = SaimUtils.getIndexOfMaxValue(rsquareds);
             
