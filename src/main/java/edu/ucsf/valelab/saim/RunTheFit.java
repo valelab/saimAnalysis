@@ -97,8 +97,10 @@ public class RunTheFit extends Thread {
       final SaimFunctionFitter sff = new SaimFunctionFitter(
               sd_.wavelength_, sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
       final SaimFunction sf = new SaimFunction(sd_);
-      double[] guess = new double[]{sd_.A_, sd_.B_, sd_.heights_[0]};
-      sff.setGuess(guess);
+
+      final int nrTries = sd_.heights_.length;
+      Double[] r2s = new Double[nrTries];
+      double[][] results = new double[nrTries][];
 
       // now cycle through the x/y pixels and fit each of them
       IntensityData observed = new IntensityData();
@@ -122,25 +124,35 @@ public class RunTheFit extends Thread {
                   SaimUtils.organize(observed, sd_, values, anglesDegrees,
                           anglesRadians);
 
-                  try {
-                     double[] result = sff.fit(
-                             observed.getWeightedObservedPoints());
-                     fpOut_[2].setf(x, y, (float) result[0]);
-                     fpOut_[3].setf(x, y, (float) result[1]);
-                     fpOut_[0].setf(x, y, (float) result[2]);
-                     calculated.clear();
-                     SaimUtils.predictValues(observed, calculated, result, sf);
+                  for (int i = 0; i < nrTries; i++) {
                      try {
-                        double r2 = SaimUtils.getRSquared(observed, calculated);
-                        fpOut_[1].setf(x, y, (float) r2);
-                     } catch (InvalidInputException ex) {
-                        ij.IJ.log("Observed and Calculated datasets differe in size");
+                        double[] guess = new double[]{sd_.A_, sd_.B_, sd_.heights_[i]};
+                        sff.setGuess(guess);
+
+                        results[i] = sff.fit(
+                                observed.getWeightedObservedPoints());
+
+                        calculated.clear();
+                        SaimUtils.predictValues(observed, calculated, results[i], sf);
+                        try {
+                           r2s[i] = SaimUtils.getRSquared(observed, calculated);
+                        } catch (InvalidInputException ex) {
+                           ij.IJ.log("Observed and Calculated datasets differe in size");
+                        }
+                     } catch (TooManyIterationsException tiex) {
+                        for (int j = 0; j < 4; j++) {
+                           fpOut_[j].setf(x, y, Float.NaN);
+                        }
+                        r2s[i] = 0.0;
+                        ij.IJ.log("Failed to fit pixel " + x + ", " + y);
                      }
-                  } catch (TooManyIterationsException tiex) {
-                     for (int i = 0; i < 4; i++) 
-                        fpOut_[i].setf(x, y, Float.NaN);
-                     ij.IJ.log("Failed to fit pixel " + x + ", " + y);
                   }
+                  final int bestIndex = SaimUtils.getIndexOfMaxValue(r2s);
+                  fpOut_[2].setf(x, y, (float) results[bestIndex][0]);  // A
+                  fpOut_[3].setf(x, y, (float) results[bestIndex][1]);  // B
+                  fpOut_[0].setf(x, y, (float) results[bestIndex][2]);   // height
+                  fpOut_[1].setf(x, y, (float) r2s[bestIndex].doubleValue());
+
                }
             }
             nrXProcessed_.getAndIncrement();
