@@ -21,6 +21,7 @@
 package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.data.SaimData;
+import edu.ucsf.valelab.saim.preferences.SaimPrefs;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.gui.NonBlockingGenericDialog;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author nico
  */
 public class SaimFit implements PlugIn, DialogListener {
-   private final SaimData sd_ = new SaimData();
+   private SaimData sd_ = new SaimData();
    private final AtomicBoolean isRunning_ = new AtomicBoolean(false);
    private OverseeTheFit oft_;
    
@@ -46,6 +47,11 @@ public class SaimFit implements PlugIn, DialogListener {
    public void run(String arg) {
       final NonBlockingGenericDialog gd = new NonBlockingGenericDialog( 
               "Saim Fit " + Version.VERSION);
+      
+      SaimData sd = (SaimData) SaimPrefs.getObject(SaimPrefs.SAIMDATAKEY);
+      if (sd != null) {
+         sd_ = sd;
+      }
       
       gd.addNumericField("Wavelenght (nm)", sd_.wavelength_, 1);
       gd.addNumericField("Sample Refractive Index", sd_.nSample_, 2);
@@ -109,6 +115,8 @@ public class SaimFit implements PlugIn, DialogListener {
             return false;
          }
          sd_.threshold_ = (int) gd.getNextNumber();
+         
+         SaimPrefs.putObject(SaimPrefs.SAIMDATAKEY, sd_);
 
          if (isRunning_.get()) {
             ij.IJ.showMessage("Saim Fit is already running");

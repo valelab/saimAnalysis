@@ -27,6 +27,7 @@ import edu.ucsf.valelab.saim.data.IntensityData;
 import edu.ucsf.valelab.saim.data.SaimData;
 import edu.ucsf.valelab.saim.exceptions.InvalidInputException;
 import edu.ucsf.valelab.saim.plot.PlotUtils;
+import edu.ucsf.valelab.saim.preferences.SaimPrefs;
 import ij.ImagePlus;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
@@ -49,7 +50,7 @@ import org.jfree.data.xy.XYSeries;
  */
 public class SaimInspect implements PlugIn, DialogListener {
 
-   private final SaimData sd_ = new SaimData();
+   private SaimData sd_ = new SaimData();
 
    private Frame plotFrame_;
 
@@ -58,6 +59,11 @@ public class SaimInspect implements PlugIn, DialogListener {
    public void run(String arg) {
       final NonBlockingGenericDialog gd = new NonBlockingGenericDialog(
               "Saim Inspect " + Version.VERSION);
+      
+      SaimData sd = (SaimData) SaimPrefs.getObject(SaimPrefs.SAIMDATAKEY);
+      if (sd != null) {
+         sd_ = sd;
+      }
 
       gd.addNumericField("Wavelenght (nm)", sd_.wavelength_, 1);
       gd.addNumericField("Sample Refr. Index", sd_.nSample_, 2);
@@ -106,12 +112,14 @@ public class SaimInspect implements PlugIn, DialogListener {
             ij.IJ.error("Heights should look like: \"10.0, 230.5\"");
             return false;
          }
+         
+         SaimPrefs.putObject(SaimPrefs.SAIMDATAKEY, sd_);
 
          ImagePlus ip = ij.IJ.getImage();
          Roi roi = ip.getRoi();
-         if (roi == null) {
-            ij.IJ.showMessage("Please draw an ROI on the image");
-         }
+         // if (roi == null) {
+         //   ij.IJ.showMessage("Please draw an ROI on the image");
+         //}
          ResultsTable rt = new ResultsTable();
          Analyzer az = new Analyzer(ip, Analyzer.MEAN, rt);
          for (int i = 1; i <= ip.getNSlices(); i++) {

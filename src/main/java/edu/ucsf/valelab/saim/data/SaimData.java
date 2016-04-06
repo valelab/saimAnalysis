@@ -20,6 +20,7 @@
 
 package edu.ucsf.valelab.saim.data;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -27,7 +28,12 @@ import java.util.Arrays;
  * again in the Saim calculations
  * @author nico
  */
-public class SaimData {
+public class SaimData implements Serializable {
+   
+   private static final long serialVersionUID = 8172353819825617L;
+   
+   public static final String VERSION = "1";  // Increase whenever this object changes
+   
    public double wavelength_ = 488.0;
    public double nSample_ = 1.36;
    public double dOx_ = 1900.0;

@@ -21,7 +21,9 @@
 package edu.ucsf.valelab.saim;
 
 import edu.ucsf.valelab.saim.calculations.SaimCalc;
+import edu.ucsf.valelab.saim.data.SaimData;
 import edu.ucsf.valelab.saim.plot.PlotUtils;
+import edu.ucsf.valelab.saim.preferences.SaimPrefs;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.gui.NonBlockingGenericDialog;
@@ -39,15 +41,11 @@ import org.jfree.data.xy.XYSeries;
  */
 public class SaimPlot implements PlugIn, DialogListener
 {
-   Frame plotFrame_;      
-   double wavelength_ = 488.0;
-   double nSample_ = 1.36;
-   double dOx_ = 500.0;
-   int firstAngle_ = -42;
-   int lastAngle_ = 42;
-   String heightString_ = "16, 32, 48";
-   boolean listValues_ = false;
-   ResultsTable saimTable_;
+   private Frame plotFrame_;   
+   private SaimData sd_ = new SaimData();
+   private int lastAngle_ = 42;
+   private boolean listValues_ = false;
+   private ResultsTable saimTable_;
    
    public static void main( String[] args )
    { 
@@ -119,16 +117,21 @@ public class SaimPlot implements PlugIn, DialogListener
         final NonBlockingGenericDialog gd = new NonBlockingGenericDialog(
                 "Saim Plot  " + Version.VERSION);
 
-        gd.addNumericField("Wavelenght (nm)", wavelength_, 1);
-        gd.addNumericField("Sample Refractive Index", nSample_, 2);
-        gd.addNumericField("Thickness of oxide layer (nm)", dOx_, 1);
+        SaimData sd = (SaimData) SaimPrefs.getObject(SaimPrefs.SAIMDATAKEY);
+        if (sd != null) {
+           sd_ = sd;
+        }
+        
+        gd.addNumericField("Wavelenght (nm)", sd_.wavelength_, 1);
+        gd.addNumericField("Sample Refractive Index", sd_.nSample_, 2);
+        gd.addNumericField("Thickness of oxide layer (nm)", sd_.dOx_, 1);
         gd.setInsets(15, 0, 3);
         gd.addMessage("Angles to be plotted:");
-        gd.addNumericField("First angle", firstAngle_, 0);
+        gd.addNumericField("First angle", sd_.firstAngle_, 0);
         gd.addNumericField("Last angle", lastAngle_, 0);
         gd.setInsets(15, 0, 3);
         gd.addMessage("Heights as comma separated values:");
-        gd.addStringField("Heights in nm", heightString_);
+        gd.addStringField("Heights in nm", SaimData.toString(sd_.heights_), 18 );
         gd.addCheckbox("Output values", listValues_);
         gd.addPreviewCheckbox(null, "Plot");
 
@@ -145,21 +148,18 @@ public class SaimPlot implements PlugIn, DialogListener
     @Override
     public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
         if (gd.isPreviewActive()) {
-            wavelength_ = gd.getNextNumber();
-            nSample_ = gd.getNextNumber();
-            dOx_ = gd.getNextNumber();
-            firstAngle_ = (int) gd.getNextNumber();
+            sd_.wavelength_ = gd.getNextNumber();
+            sd_.nSample_ = gd.getNextNumber();
+            sd_.dOx_ = gd.getNextNumber();
+            sd_.firstAngle_ = (int) gd.getNextNumber();
             lastAngle_ = (int) gd.getNextNumber();
-            heightString_ = gd.getNextString();
+            sd_.heights_ = SaimData.fromString(gd.getNextString());
             listValues_ = gd.getNextBoolean();
-            String[] tokens = heightString_.split("[,]");
-            double[] heights = new double[tokens.length];
-            for (int i = 0; i < tokens.length; i++) {
-                heights[i] = Double.parseDouble(tokens[i]);
-            }
+            
+            SaimPrefs.putObject(SaimPrefs.SAIMDATAKEY, sd_);
 
-            plotFig(listValues_, wavelength_, nSample_, dOx_, firstAngle_,
-                    lastAngle_, heights);
+            plotFig(listValues_, sd_.wavelength_, sd_.nSample_, sd_.dOx_, 
+                    (int) sd_.firstAngle_, lastAngle_, sd_.heights_);
         }
 
         return true;
