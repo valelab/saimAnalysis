@@ -24,6 +24,7 @@ import edu.ucsf.valelab.saim.calculations.SaimFunction;
 import edu.ucsf.valelab.saim.calculations.SaimFunctionFitter;
 import edu.ucsf.valelab.saim.calculations.SaimUtils;
 import edu.ucsf.valelab.saim.data.IntensityData;
+import edu.ucsf.valelab.saim.data.IntensityDataItem;
 import edu.ucsf.valelab.saim.data.SaimData;
 import edu.ucsf.valelab.saim.exceptions.InvalidInputException;
 import edu.ucsf.valelab.saim.plot.PlotUtils;
@@ -39,6 +40,7 @@ import ij.plugin.filter.Analyzer;
 import java.awt.AWTEvent;
 import java.awt.Frame;
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.prefs.Preferences;
 import org.jfree.data.xy.XYSeries;
 
@@ -51,6 +53,8 @@ import org.jfree.data.xy.XYSeries;
 public class SaimInspect implements PlugIn, DialogListener {
 
    private SaimData sd_ = new SaimData();
+   private boolean listValues_ = false;
+   private ResultsTable saimTable_;
 
    private Frame plotFrame_;
 
@@ -75,13 +79,14 @@ public class SaimInspect implements PlugIn, DialogListener {
       gd.addCheckbox("Mirror around 0", sd_.mirrorAround0_);
       gd.addCheckbox("0 angle is doubled", sd_.zeroDoubled_);
       gd.setInsets(15, 0, 3);
-      gd.addCheckbox("Use B * angle", sd_.useBAngle_);
+      //gd.addCheckbox("Use B * angle", sd_.useBAngle_);
       gd.addMessage("Guess:");
       gd.addNumericField("A", sd_.A_, 0);
       gd.addNumericField("B", sd_.B_, 0);
       gd.addStringField("Height (nm)", SaimData.toString(sd_.heights_), 15);
-      gd.setInsets(15, 0, 3);
+      gd.setInsets(15, 20,0);
 
+      gd.addCheckbox("Output values", listValues_);
       gd.addPreviewCheckbox(null, "Inspect");
 
       gd.hideCancelButton();
@@ -103,9 +108,10 @@ public class SaimInspect implements PlugIn, DialogListener {
          sd_.angleStep_ = gd.getNextNumber();
          sd_.mirrorAround0_ = gd.getNextBoolean();
          sd_.zeroDoubled_ = gd.getNextBoolean();
-         sd_.useBAngle_ = gd.getNextBoolean();
+         //sd_.useBAngle_ = gd.getNextBoolean();
          sd_.A_ = gd.getNextNumber();
          sd_.B_ = gd.getNextNumber();
+         listValues_ = gd.getNextBoolean();
          try {
             sd_.heights_ = SaimData.fromString(gd.getNextString());
          } catch (NumberFormatException nfe) {
@@ -116,10 +122,6 @@ public class SaimInspect implements PlugIn, DialogListener {
          SaimPrefs.putObject(SaimPrefs.SAIMDATAKEY, sd_);
 
          ImagePlus ip = ij.IJ.getImage();
-         Roi roi = ip.getRoi();
-         // if (roi == null) {
-         //   ij.IJ.showMessage("Please draw an ROI on the image");
-         //}
          ResultsTable rt = new ResultsTable();
          Analyzer az = new Analyzer(ip, Analyzer.MEAN, rt);
          for (int i = 1; i <= ip.getNSlices(); i++) {
@@ -145,7 +147,7 @@ public class SaimInspect implements PlugIn, DialogListener {
             
             // create the fitter
             SaimFunctionFitter sff = new SaimFunctionFitter(
-                    sd_.wavelength_, sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
+                    sd_.wavelength_, sd_.dOx_, sd_.nSample_, false);
             
             final int nrTries = sd_.heights_.length;
             Double[] rsquareds = new Double[nrTries];
@@ -163,7 +165,7 @@ public class SaimInspect implements PlugIn, DialogListener {
 
                // use the fitted data to calculate the predicted values
                SaimFunction saimFunction = new SaimFunction(sd_.wavelength_,
-                       sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
+                       sd_.dOx_, sd_.nSample_, false);
                predictedDatas[i] = new IntensityData();
                SaimUtils.predictValues(observedData, predictedDatas[i], 
                        results[i], saimFunction);
@@ -198,6 +200,30 @@ public class SaimInspect implements PlugIn, DialogListener {
                             fmt(results[bestIndex][1], 0)
                     + ", h: " + fmt(results[bestIndex][2], 1) + ", r2: " + 
                             fmt(rsquareds[bestIndex], 2));
+            
+            if (listValues_) {
+               if (saimTable_ == null) {
+                  saimTable_ = new ResultsTable();
+               }
+               saimTable_.reset();
+               
+               List<IntensityDataItem> dataList = observedData.getDataList();
+               
+               for (int i = 0; i < dataList.size(); i ++) {
+                  saimTable_.incrementCounter();
+                  saimTable_.addValue("Angle", dataList.get(i).getAngleDegree());
+                  saimTable_.addValue("RawData", dataList.get(i).getIntensity());
+                  
+                  for (int j = 0; j < results.length; j++) {
+                     saimTable_.addValue("" + sd_.heights_[j] + " nm",
+                             predictedDatas[j].getDataList().get(i).getIntensity());
+                  }
+               }
+               saimTable_.show("Saim Inspect Output");
+
+            }
+      
+            
             gd.getPreviewCheckbox().setState(false);
 
          } catch (InvalidInputException ex) {
