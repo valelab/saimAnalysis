@@ -160,6 +160,9 @@ public class SaimPlot implements PlugIn, DialogListener
 
             plotFig(listValues_, sd_.wavelength_, sd_.nSample_, sd_.dOx_, 
                     (int) sd_.firstAngle_, lastAngle_, sd_.heights_);
+            
+            // switch checkbox off when we are done
+            gd.getPreviewCheckbox().setState(false);
         }
 
         return true;
