@@ -4,7 +4,7 @@
   <groupId>edu.ucsf.valelab.saim</groupId>
   <artifactId>saim_</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
 
   <name>saimAnalysis</name>
   <url>http://valelab.ucsf.edu/~nico/ijplugins</url>
