@@ -81,7 +81,7 @@ public class RunTheFit extends Thread {
 
    @Override
    public void run() {
-      // prepopulate arrays with angles in radians and in degrees
+      // pre-populate arrays with angles in radians and in degrees
       final double[] anglesRadians = new double[ip_.getNSlices()];
       final double[] anglesDegrees = new double[ip_.getNSlices()];
       for (int i = 0; i < anglesRadians.length; i++) {
@@ -122,8 +122,7 @@ public class RunTheFit extends Thread {
                
                // only calculate if the average pixel intensity is
                // above the threshold
-               
-               if (ip_.getProcessor().get(x, y) > (sum / (float) values.length)) {               
+               if ( (sum / (float) values.length) > sd_.threshold_) {               
                   observed.clear();
                   SaimUtils.organize(observed, sd_, values, anglesDegrees,
                           anglesRadians);
