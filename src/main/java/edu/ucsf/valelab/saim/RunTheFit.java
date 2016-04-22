@@ -95,7 +95,7 @@ public class RunTheFit extends Thread {
 
       // create the fitter
       final SaimFunctionFitter sff = new SaimFunctionFitter(
-              sd_.wavelength_, sd_.dOx_, sd_.nSample_, sd_.useBAngle_);
+              sd_.wavelength_, sd_.dOx_, sd_.nSample_, false);
       final SaimFunction sf = new SaimFunction(sd_);
 
       final int nrTries = sd_.heights_.length;
